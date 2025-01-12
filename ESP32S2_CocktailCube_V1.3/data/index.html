@@ -1,0 +1,91 @@
+<!--
+/**
+ * Includes main page (index.html)
+ *
+ * @author    Florian Staeblein
+ * @date      2024/01/28
+ * @copyright © 2024 Florian Staeblein
+ */
+-->
+ 
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title id="mixerTitle">Cocktailmixer</title>
+    <meta name="description" content="Cocktailmixer Remote Control - Copyright © 2024 Florian Stäblein">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi"/>
+    <link href="index.css" rel="stylesheet" type="text/css">
+    <script src="draggableDoughnutChart.js"></script>
+    <!--[if IE]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div id="doughnutchart-controls">
+      <object id="mixerNameImage" type="image/svg+xml" width="300" height="100">
+        <h1 id="mixerName">Mixer Settings</h1>
+      </object>
+      <h3>Use Doughnut Chart to adjust Mixing recipe!</h3>
+      <canvas id="doughnutchart" width="300" height="300">Your browser is too old!</canvas>
+      <br>
+      <div class="round-corners">
+        <table id="proportions-table">
+          <tr>
+            <th id="labelLiquid0" class="bordered-cell">Liquid 1</th>
+            <th id="labelLiquid1" class="bordered-cell">Liquid 2</th>
+            <th id="labelLiquid2" class="bordered-cell">Liquid 3</th>
+          </tr>
+          <tr>
+            <td class="bordered-cell">
+              <div class="adjust-button" data-i="0" data-d="1">&#8722;</div>
+              <var id="varLiquid0">0%</var>
+              <div class="adjust-button" data-i="0" data-d="-1">&#43;</div>
+            </td>
+            <td class="bordered-cell">
+              <div class="adjust-button" data-i="1" data-d="1">&#8722;</div>
+              <var id="varLiquid1">0%</var>
+              <div class="adjust-button" data-i="1" data-d="-1">&#43;</div>
+            </td>
+            <td class="bordered-cell">
+              <div class="adjust-button" data-i="2" data-d="1">&#8722;</div>
+              <var id="varLiquid2">0%</var>
+              <div class="adjust-button" data-i="2" data-d="-1">&#43;</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <br>
+      <br>
+      <input type="checkbox" id="ExpertSettings">
+      <label for="ExpertSettings">Expert Settings</label>
+      <br>
+      <br>
+      <div class="round-corners">
+        <table id="expertSettings-table">
+            <th class="bordered-cell">
+              <p>PWM Cycle timespan</p>
+            </th>
+            <th class="bordered-cell">
+              <div class="slidecontainer">
+                <table style="padding: 10px;">
+                  <th>
+                    <input id="sliderCycleTimespan" type="range">
+                  </th>
+                  <th>
+                    <var id="valueCycleTimespan" style="margin-left: 10px;">500ms</var>
+                  </th>
+                </table>
+              </div>
+            </th>
+        </table>
+      </div>
+      <br>
+      <br>
+      <br>
+      <p>Copyright © 2024 F.Stäblein</p>
+    </div>
+    
+    <script src="index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,100 @@
+/**
+ * Includes css code for index.html
+ *
+ * @author    Florian Staeblein
+ * @date      2024/01/28
+ * @copyright © 2024 Florian Staeblein
+ */
+
+/* Over all font settings */
+*
+{
+  font-family: Calibri, Helvetica, sans-serif;
+  margin:0;  /* to remove the top and left whitespace */
+  padding:0; /* to remove the top and left whitespace */
+}
+
+html, body
+{
+  width:100%;    /* just to be sure these are full screen*/
+  height:100%;   /* just to be sure these are full screen*/
+}
+
+/* ID for controls container */
+#doughnutchart-controls
+{
+  text-align: center;
+  width: 100%;
+  min-width: 350px;
+}
+
+/* Class for round corners */
+.round-corners
+{
+  border: 1px solid lightgray;
+  border-radius: 15px;
+  overflow: hidden;
+  display: inline-block;
+}
+
+/* ID for hiding expert settings table */
+#expertSettings-table
+{
+  display: none;
+}
+
+/* Settings for all tables */
+table
+{
+  border-spacing: 0;
+  border-collapse: collapse;
+
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none;
+
+  width: 100%;
+  height: 100%;
+  display: inline-block;
+}
+
+/* Settings for all table bodys */
+tbody
+{
+  display: inline-block;
+  
+  width: 100%;
+  height: 100%;
+}
+
+/* Class for bordered cells */
+.bordered-cell
+{
+  border: 1px solid lightgray;
+  padding: 10px;
+  margin: 0;
+}
+
+/* Class for plus and minus buttons */
+.adjust-button
+{
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 20px;
+  text-align: center;
+  display: inline-block;
+  border: 1px solid grey;
+  border-radius: 5px;
+  margin: 1px;
+}
+
+/* Settings for all var objects */
+var
+{
+  width: 30px;
+  display: inline-block;
+}

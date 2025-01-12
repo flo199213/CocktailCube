@@ -1,0 +1,577 @@
+<!--This is the plain html source of the hex encoded Editor-Page embedded in SPIFFSEditor.cpp -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>ESP Editor</title>
+    <meta name="description" content="Cocktailmixer SPIFFS Editor - Copyright © 2024 Florian Stäblein">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi"/>
+    
+    <style type="text/css" media="screen">
+.contextMenu
+{
+  z-index: 300;
+  position: absolute;
+  left: 5px;
+  border: 1px solid #444;
+  background-color: #F5F5F5;
+  display: none;
+  box-shadow: 0 0 10px rgba( 0, 0, 0, .4 );
+  font-size: 12px;
+  font-family: sans-serif;
+  font-weight:bold;
+}
+
+.contextMenu ul
+{
+  list-style: none;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.contextMenu li
+{
+  position: relative;
+  min-width: 60px;
+  cursor: pointer;
+}
+
+.contextMenu span
+{
+  color: #444;
+  display: inline-block;
+  padding: 6px;
+}
+
+.contextMenu li:hover
+{
+  background: #444;
+}
+
+.contextMenu li:hover span
+{
+  color: #EEE;
+}
+
+.tvu ul
+{
+  margin: 0;
+  list-style: none;
+  padding: 8px;
+}
+
+.tvu li
+{
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.tvu input
+{
+  position: absolute;
+  opacity: 0;
+}
+
+.tvu
+{
+  font: normal 12px Verdana, Arial, Sans-serif;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+  color: #444;
+  line-height: 16px;
+}
+
+.tvu span
+{
+  margin-bottom:5px;
+  padding: 0 0 0 18px;
+  cursor: pointer;
+  display: inline-block;
+  height: 16px;
+  vertical-align: middle;
+  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAADoSURBVBgZBcExblNBGAbA2ceegTRBuIKOgiihSZNTcC5LUHAihNJR0kGKCDcYJY6D3/77MdOinTvzAgCw8ysThIvn/VojIyMjIyPP+bS1sUQIV2s95pBDDvmbP/mdkft83tpYguZq5Jh/OeaYh+yzy8hTHvNlaxNNczm+la9OTlar1UdA/+C2A4trRCnD3jS8BB1obq2Gk6GU6QbQAS4BUaYSQAf4bhhKKTFdAzrAOwAxEUAH+KEM01SY3gM6wBsEAQB0gJ+maZoC3gI6iPYaAIBJsiRmHU0AALOeFC3aK2cWAACUXe7+AwO0lc9eTHYTAAAAAElFTkSuQmCC') no-repeat;
+  background-position: 0px 0px;
+}
+
+.tvu span:hover
+{
+  text-decoration: underline;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0)
+{
+  .tvu
+  {
+    -webkit-animation: webkit-adjacent-element-selector-bugfix infinite 1s;
+  }
+
+  @-webkit-keyframes webkit-adjacent-element-selector-bugfix
+  {
+    from
+    {    
+      padding: 0;
+    } 
+    to
+    { 
+      padding: 0;
+    }
+  }
+}
+
+#uploaderMenuStrip
+{
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height:28px;
+  line-height: 24px;
+  padding-left: 10px;
+  background-color: #292F40;
+  color:#F2F2F2;
+  min-width:600px;
+}
+
+#fileTree
+{ 
+  position: absolute;
+  top: 28px;
+  bottom: 0;
+  left: 0;
+  width:100%;
+  background-color: #F0F0F0;
+}
+
+#systeminfo
+{ 
+  position: absolute;
+  top: 28px;
+  bottom: 0;
+  right: 0px;
+  width: 400px;
+  padding: 8px;
+  background-color: #265DA6;
+  border: 2px solid #292F40;
+  font: bold 12px Verdana, Arial, Sans-serif;
+}
+
+#systeminfoFrame
+{
+  width: 420px;
+  height: 600px;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+#loader
+{ 
+  position: absolute;
+  top: 36%;
+  right: 40%;
+}
+
+.loader
+{
+  z-index: 10000;
+  border: 8px solid #b5b5b5; /* Grey */
+  border-top: 8px solid #3498db; /* Blue */
+  border-bottom: 8px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 240px;
+  height: 240px;
+  animation: spin 2s linear infinite;
+  display:none;
+}
+
+@keyframes spin
+{
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+    </style>
+    <script>
+if (typeof XMLHttpRequest === "undefined")
+{
+  XMLHttpRequest = function ()
+  {
+    try { return new ActiveXObject("Msxml2.XMLHTTP.6.0"); } catch (e) {}
+    try { return new ActiveXObject("Msxml2.XMLHTTP.3.0"); } catch (e) {}
+    try { return new ActiveXObject("Microsoft.XMLHTTP"); } catch (e) {}
+    throw new Error("This browser does not support XMLHttpRequest.");
+  };
+}
+
+function sortByKey(array, key)
+{
+  return array.sort(function(a, b)
+  {
+    var x = a[key]; var y = b[key];
+    return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+  });
+}
+
+
+var QueuedRequester = function ()
+{
+  this.queue = [];
+  this.running = false;
+  this.xmlhttp = null;
+}
+
+QueuedRequester.prototype =
+{
+  _request: function(req)
+  {
+    this.running = true;
+    
+    if (!req instanceof Object)
+    {
+      return;
+    }
+    
+    var that = this;
+    
+    function ajaxCb(x, d)
+    {
+      return function()
+      {
+        if (x.readyState == 4)
+        {
+         document.getElementById("loader").style.display = "none";
+          d.callback(x.status, x.responseText);
+          
+          if (that.queue.length === 0)
+          {
+            that.running = false;
+           }
+          if (that.running)
+          {
+            that._request(that.queue.shift());
+          }
+        }
+      }
+    }
+
+    document.getElementById("loader").style.display = "block";
+    
+    var p = "";
+    if (req.params instanceof FormData)
+    {
+      p = req.params;
+    }
+    else if (req.params instanceof Object)
+    {
+      for (var key in req.params)
+      {
+        if (p === "")
+        {
+          p += (req.method === "GET")?"?":"";
+        }
+        else
+        {
+          p += "&";
+        }
+        p += encodeURIComponent(key) + "=" + encodeURIComponent(req.params[key]);
+      };
+    }
+    
+    this.xmlhttp = new XMLHttpRequest();
+    this.xmlhttp.onreadystatechange = ajaxCb(this.xmlhttp, req);
+    if (req.method === "GET")
+    {
+      this.xmlhttp.open(req.method, req.url+p, true);
+      this.xmlhttp.send();
+    }
+    else
+    {
+      this.xmlhttp.open(req.method, req.url, true);
+      if (p instanceof String)
+      {
+        this.xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      }
+      this.xmlhttp.send(p);
+    }
+  },
+  
+  stop: function()
+  {
+    if (this.running)
+    {
+      this.running = false;
+    }
+    if (this.xmlhttp && this.xmlhttp.readyState < 4)
+    {
+      this.xmlhttp.abort();
+    }
+  },
+  
+  add: function(method, url, params, callback)
+  {
+    this.queue.push({ url:url, method:method, params:params, callback:callback });
+    if (!this.running)
+    {
+      this._request(this.queue.shift());
+    }
+  }
+}
+
+var requests = new QueuedRequester();
+
+function createFileTree(element)
+{
+  var treeRoot = document.createElement("div");
+  treeRoot.className = "tvu";
+  document.getElementById(element).appendChild(treeRoot);
+
+  function loadDownload(path)
+  {
+    document.getElementById('download-frame').src = "/edit?download=" + path;
+  }
+
+  function fillFileMenu(element, path)
+  {
+    var list = document.createElement("ul");
+    element.appendChild(list);
+    var action = document.createElement("li");
+    list.appendChild(action);
+
+    // Create download file context menu entry
+    var downloadFile = document.createElement("li");
+    list.appendChild(downloadFile);
+    downloadFile.innerHTML = "<span>Download</span>";
+    
+    // Register click handler for download file context menu entry
+    downloadFile.onclick = function(e)
+    {
+      loadDownload(path);
+      if (document.body.getElementsByClassName('contextMenu').length > 0)
+      {
+        document.body.removeChild(element);
+      }
+    };
+    
+    // Create delete file context menu entry
+    var deleteFile = document.createElement("li");
+    list.appendChild(deleteFile);
+    deleteFile.innerHTML = "<span>Delete</span>";
+    
+    // Register click handler for delete file context menu entry
+    deleteFile.onclick = function(e)
+    {
+      httpDelete(path);
+      if (document.body.getElementsByClassName('contextMenu').length > 0)
+      {
+        document.body.removeChild(element);
+      }
+    };
+  }
+
+  function showContextMenu(event, path)
+  {
+    // Create new div
+    var divContext =document.createElement("div");
+    var scrollTop = document.body.scrollTop ? document.body.scrollTop : document.documentElement.scrollTop;
+    var scrollLeft = document.body.scrollLeft ? document.body.scrollLeft : document.documentElement.scrollLeft;
+    var left = event.clientX + scrollLeft;
+    var top = event.clientY + scrollTop;
+    divContext.className = 'contextMenu';
+    divContext.style.display = 'block';
+    divContext.style.left = left + 'px';
+    divContext.style.top = top + 'px';
+    
+    // Fills context menu with file menu
+    fillFileMenu(divContext, path);
+    
+    // Shows context menu
+    document.body.appendChild(divContext);
+    var width = divContext.offsetWidth;
+    var height = divContext.offsetHeight;
+    
+    // Register handler
+    divContext.onmouseout = function(e)
+    {
+      if (e.clientX < left || e.clientX > (left + width) || e.clientY < top || e.clientY > (top + height))
+      {
+        if (document.body.getElementsByClassName('contextMenu').length > 0)
+        {
+          document.body.removeChild(divContext);
+        }
+      }
+    };
+  }
+
+  function createTreeLeaf(path, name, size)
+  {
+    var leaf = document.createElement("li");
+    leaf.id = path + name;
+    var label = document.createElement("span");
+    label.innerHTML = name;
+    leaf.appendChild(label);
+    
+    leaf.oncontextmenu = function(e)
+    {
+      e.preventDefault();
+      e.stopPropagation();
+      showContextMenu(e, leaf.id);
+    };
+    return leaf;
+  }
+
+  function addList(parent, path, items)
+  {
+    sortByKey(items, 'name');
+    
+    var list = document.createElement("ul");
+    parent.appendChild(list);
+    
+    var ll = items.length;
+    for (var index = 0; index < ll; index++)
+    {
+      if (items[index].type === "file")
+      {
+        list.appendChild(createTreeLeaf(path, items[index].name, items[index].size));
+      }
+    }
+  }
+
+  this.refreshPath = function()
+  {
+    treeRoot.removeChild(treeRoot.childNodes[0]);
+    httpGet(treeRoot, "/");
+  };
+
+  // Method for http get
+  function httpDelete(filename)
+  {
+    var formData = new FormData();
+    formData.append("path", filename);
+    requests.add("DELETE", "/edit", formData, delCb());
+  }
+  function delCb()
+  {
+    return function(status, responseText)
+    {
+      if (status != 200)
+      {
+        alert("ERROR[" + status + "]: " + responseText);
+      }
+      else
+      {
+        treeRoot.removeChild(treeRoot.childNodes[0]);
+        httpGet(treeRoot, "/");
+      }
+    }
+  }
+
+  // Method for http get
+  function httpGet(parent, path)
+  {
+    requests.add("GET", "/edit", { list: path }, getCb(parent, path));
+  }
+  function getCb(parent, path)
+  {
+    return function(status, responseText)
+    {
+      if (status == 200)
+      {
+        addList(parent, path, JSON.parse(responseText));
+      }
+    }
+  }
+
+  httpGet(treeRoot, "/");
+  return this;
+}
+
+function createFileUploader(element, fileTree)
+{  
+  // Create refresh button
+  var refreshButton = document.createElement("button");
+  refreshButton.innerHTML = 'Refresh List';
+  document.getElementById(element).appendChild(refreshButton);
+
+  // Create open file input
+  var openFileInput = document.createElement("input");
+  openFileInput.type = "file";
+  openFileInput.multiple = false;
+  openFileInput.name = "data";
+  openFileInput.id = "upload-select";
+  document.getElementById(element).appendChild(openFileInput);
+    
+  // Create upload button
+  var uploadButton = document.createElement("button");
+  uploadButton.innerHTML = 'Upload';
+  document.getElementById(element).appendChild(uploadButton);
+  
+  // Register click handler for refresh button
+  refreshButton.onclick = function(e)
+  {
+    fileTree.refreshPath();
+  };
+  
+  // Register click handler for upload button
+  uploadButton.onclick = function(e)
+  {
+    if (openFileInput.files.length === 0)
+    {
+      return;
+    }
+    
+    var filename = openFileInput.files[0].name;
+    var ext = /(?:\.([^.]+))?$/.exec(filename)[1];
+    var name = /(.*)\.[^.]+$/.exec(filename)[1];
+    
+    if (typeof name !== undefined)
+    {
+      filename = name;
+    }
+    filename = "/" + filename + "." + ext;
+    
+    var formData = new FormData();
+    formData.append("data", openFileInput.files[0], filename);
+    requests.add("POST", "/edit", formData, httpPostProcessRequest);
+    
+    var uploadSelect = document.getElementById("upload-select");
+    uploadSelect.value = "";
+  };
+  
+  function httpPostProcessRequest(status, responseText)
+  {
+    if (status != 200)
+    {
+      alert("ERROR[" + status + "]: " + responseText);
+    }
+    else
+    {
+      fileTree.refreshPath();
+    }
+  };
+}
+
+function onBodyLoad()
+{ 
+  // Create file tree
+  var fileTree = createFileTree("fileTree");
+  
+  // Create uploader menu strip
+  createFileUploader("uploaderMenuStrip", fileTree);
+};
+    </script>
+  </head>
+  <body onload="onBodyLoad();">
+    <div id="loader" class="loader"></div>
+    <div id="uploaderMenuStrip"></div>
+    <div id="fileTree"></div>
+    <div id="systeminfo">
+      <p>System Info:</p>
+      <br>
+      <iframe id="systeminfoFrame" src="/edit?systeminfo"></iframe>
+    </div>
+    <iframe id="download-frame" style='display:none;'></iframe>
+  </body>
+</html>
