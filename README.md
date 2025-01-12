@@ -3,7 +3,7 @@ Sourcecode for CocktailCube Devices powered by ESP32S2 custom board (PCB)
 
 You can download the 3D print files required for the assembly from Cults, printables or makerworld.
 
- | Link
+Page | Link
 -------- | --------
 Cults: | <a href="https://cults3d.com/:XXXXXXXX">https://cults3d.com/:XXXXXXXX</a> 
 Printables: | <a href="https://printables.com/XXXXXXXX">https://printables.com/:XXXXXXXX</a> 
