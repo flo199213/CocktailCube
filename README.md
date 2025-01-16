@@ -21,7 +21,7 @@ PCB + Kit: | <a href="https://aliexpress.com/pcb+kit">https://aliexpress.com/pcb
 
 ___
 
-Releases (Deprecated. From previous project):
+Releases (From previous project):
 * V1.0 - Features:
   - Initial Release
 * V1.1 - Features:
@@ -33,7 +33,7 @@ Releases (Deprecated. From previous project):
   
 ___
 
-Releases (Inital CocktailCube Release):
+**Releases (Inital CocktailCube Release):**
 * V1.3 - Features:
   - The configuration now comes from a JSON configuration file, which prevents you from having to rebuild and upload the firmware every time you want to change the configuration. The Winebar was integrated as a variant in the same firmware.
   <img src="Images/CocktailCube_ConfigFile.jpg" width="450">
