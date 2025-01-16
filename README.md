@@ -19,6 +19,8 @@ PCB + Kit: | <a href="https://aliexpress.com/pcb+kit">https://aliexpress.com/pcb
 <img src="Images/CocktailCube.jpg" width="650">
 <img src="Images/WINEBar.jpg" width="650">
 
+___
+
 Releases (Deprecated. From previous project):
 * V1.0 - Features:
   - Initial Release
@@ -29,6 +31,8 @@ Releases (Deprecated. From previous project):
   - Wifi is now available! You can control the CocktailCube via access point. I will show a homepage under "\[mixername\].local". Additionally, you now can use the SPIFFS Uploader to upload the image and webpage files.
   <img src="Images/CocktailCube_PageSmall.jpg" width="450">
   
+___
+
 Releases (Inital CocktailCube Release):
 * V1.3 - Features:
   - The configuration now comes from a JSON configuration file, which prevents you from having to rebuild and upload the firmware every time you want to change the configuration. The Winebar was integrated as a variant in the same firmware.
