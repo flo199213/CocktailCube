@@ -1,9 +1,9 @@
 /**
  * Includes all display functions
  *
- * @author    Florian Staeblein
- * @date      2024/01/28
- * @copyright © 2024 Florian Staeblein
+ * @author    Florian Stäblein
+ * @date      2025/01/01
+ * @copyright © 2025 Florian Stäblein
  */
  
 #ifndef DISPLAYDRIVER_H
