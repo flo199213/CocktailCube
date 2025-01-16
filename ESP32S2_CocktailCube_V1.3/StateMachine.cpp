@@ -239,6 +239,9 @@ void StateMachine::Execute(MixerEvent event)
     case eSettings:
       FctSettings(event);
       break;
+    case eBar:
+      FctBar(event);
+      break;
     case eScreenSaver:
       FctScreenSaver(event);
       break;
@@ -288,13 +291,16 @@ void StateMachine::FctMenu(MixerEvent event)
               _currentMenuState = currentEncoderIncrements > 0 ? eDashboard : eCleaning;
               break;
             case eCleaning:
-              _currentMenuState = currentEncoderIncrements > 0 ? eDashboard : eReset;
+              _currentMenuState = currentEncoderIncrements > 0 ? eDashboard : (config.isMixer ? eReset : eBar);
               break;
             case eReset:
               _currentMenuState = currentEncoderIncrements > 0 ? eCleaning : eSettings;
               break;
+            case eBar:
+              _currentMenuState = currentEncoderIncrements > 0 ? eCleaning : eSettings;
+              break;
             case eSettings:
-              _currentMenuState = currentEncoderIncrements > 0 ? eReset : eSettings;
+              _currentMenuState = currentEncoderIncrements > 0 ? (config.isMixer ? eReset : eBar) : eSettings;
               break;
             default:
               break;
@@ -355,6 +361,103 @@ void StateMachine::FctDashboard(MixerEvent event)
   {
     case eEntry:
       {
+        if (!config.isMixer)
+        {
+          // If all three bottles are configured empty thats okay, because in this case the checkboxes will be displayed
+          bool allEmpty = _barBottle1 == eEmpty && _barBottle2 == eEmpty && _barBottle3 == eEmpty;
+
+          int16_t secureCounter = 0;
+          switch (_dashboardLiquid)
+          {
+            case eLiquid1:
+              if (_barBottle1 == eEmpty && !allEmpty)
+              {
+                // Skip empty bottle settings
+                while (secureCounter++ < 3)
+                {
+                  // Incrementing the setting value taking into account the overflow
+                  _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
+
+                  // Break only if current bottle is not empty
+                  switch (_dashboardLiquid)
+                  {
+                    case eLiquid1:
+                      if (_barBottle1 != eEmpty) { secureCounter = 3; }
+                      break;
+                    case eLiquid2:
+                      if (_barBottle2 != eEmpty) { secureCounter = 3; }
+                      break;
+                    case eLiquid3:
+                      if (_barBottle3 != eEmpty) { secureCounter = 3; }
+                      break;
+                    default:
+                      secureCounter = 3;
+                      break;
+                  }
+                }
+              }
+              break;
+            case eLiquid2:
+              if (_barBottle2 == eEmpty && !allEmpty)
+              {
+                // Skip empty bottle settings
+                while (secureCounter++ < 3)
+                {
+                  // Incrementing the setting value taking into account the overflow
+                  _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
+                  
+                  // Break only if current bottle is not empty
+                  switch (_dashboardLiquid)
+                  {
+                    case eLiquid1:
+                      if (_barBottle1 != eEmpty) { secureCounter = 3; }
+                      break;
+                    case eLiquid2:
+                      if (_barBottle2 != eEmpty) { secureCounter = 3; }
+                      break;
+                    case eLiquid3:
+                      if (_barBottle3 != eEmpty) { secureCounter = 3; }
+                      break;
+                    default:
+                      secureCounter = 3;
+                      break;
+                  }
+                }
+              }
+              break;
+            case eLiquid3:
+              if (_barBottle3 == eEmpty && !allEmpty)
+              {
+                // Skip empty bottle settings
+                while (secureCounter++ < 3)
+                {
+                  // Incrementing the setting value taking into account the overflow
+                  _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
+                  
+                  // Break only if current bottle is not empty
+                  switch (_dashboardLiquid)
+                  {
+                    case eLiquid1:
+                      if (_barBottle1 != eEmpty) { secureCounter = 3; }
+                      break;
+                    case eLiquid2:
+                      if (_barBottle2 != eEmpty) { secureCounter = 3; }
+                      break;
+                    case eLiquid3:
+                      if (_barBottle3 != eEmpty) { secureCounter = 3; }
+                      break;
+                    default:
+                      secureCounter = 3;
+                      break;
+                  }
+                }
+              }
+              break;
+            default:
+              break;
+          }
+        }
+
         // Update display and pump values
         UpdateValues();
 
@@ -379,28 +482,57 @@ void StateMachine::FctDashboard(MixerEvent event)
         // Will be true, if new encoder position is available
         if (currentEncoderIncrements != 0)
         {
-          // Increment or decrement angle
-          switch (_dashboardLiquid)
+          if (config.isMixer)
           {
-            case eLiquid1:
-              IncrementAngle(&_liquid1Angle_Degrees, _liquid2Angle_Degrees, _liquid3Angle_Degrees, currentEncoderIncrements * STEPANGLE_DEGREES);
-              break;
-            case eLiquid2:
-              IncrementAngle(&_liquid2Angle_Degrees, _liquid3Angle_Degrees, _liquid1Angle_Degrees, currentEncoderIncrements * STEPANGLE_DEGREES);
-              break;
-            case eLiquid3:
-              IncrementAngle(&_liquid3Angle_Degrees, _liquid1Angle_Degrees, _liquid2Angle_Degrees, currentEncoderIncrements * STEPANGLE_DEGREES);
-              break;
-            default:
-              break;
+            // Increment or decrement angle
+            switch (_dashboardLiquid)
+            {
+              case eLiquid1:
+                IncrementAngle(&_liquid1Angle_Degrees, _liquid2Angle_Degrees, _liquid3Angle_Degrees, currentEncoderIncrements * STEPANGLE_DEGREES);
+                break;
+              case eLiquid2:
+                IncrementAngle(&_liquid2Angle_Degrees, _liquid3Angle_Degrees, _liquid1Angle_Degrees, currentEncoderIncrements * STEPANGLE_DEGREES);
+                break;
+              case eLiquid3:
+                IncrementAngle(&_liquid3Angle_Degrees, _liquid1Angle_Degrees, _liquid2Angle_Degrees, currentEncoderIncrements * STEPANGLE_DEGREES);
+                break;
+              default:
+                break;
+            }
+          }
+          else
+          {
+            // Increment or decrement current setting value
+            switch (_dashboardLiquid)
+            {
+              case eLiquid1:
+                _liquid1_Percentage = max(min((int16_t)_liquid1_Percentage + currentEncoderIncrements, 95), 0);
+                break;
+              case eLiquid2:
+                _liquid2_Percentage = max(min((int16_t)_liquid2_Percentage + currentEncoderIncrements, 95), 0);
+                break;
+              case eLiquid3:
+                _liquid3_Percentage = max(min((int16_t)_liquid3_Percentage + currentEncoderIncrements, 95), 0);
+                break;
+              default:
+                break;
+            }
           }
 
           // Update display and pump values
           UpdateValues();
-          
-          // Draw current value string and doughnut chart in partial updating mode
-          Display.DrawCurrentValues();
-          Display.DrawDoughnutChart3(currentEncoderIncrements > 0);
+
+          if (config.isMixer)
+          {
+            // Draw current value string and doughnut chart in partial updating mode
+            Display.DrawCurrentValues();
+            Display.DrawDoughnutChart3(currentEncoderIncrements > 0);
+          }
+          else
+          {
+            // Draw bar
+            Display.DrawBar(true);
+          }
         }
 
         // Check for button press
@@ -409,16 +541,61 @@ void StateMachine::FctDashboard(MixerEvent event)
           // Short beep sound
           tone(_pinBuzzer, 500, 40);
 
-          // Incrementing the setting value taking into account the overflow
-          _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
+          if (config.isMixer)
+          {
+            // Incrementing the setting value taking into account the overflow
+            _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
+          }
+          else
+          {
+            // Skip empty bottle settings
+            int16_t secureCounter = 0;
+            do
+            {
+              // Incrementing the setting value taking into account the overflow
+              _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
+
+              // If all three bottles are configured empty thats okay, because in this case the checkboxes will be displayed
+              if (_barBottle1 == eEmpty && _barBottle2 == eEmpty && _barBottle3 == eEmpty)
+              {
+                break;
+              }
+
+              // Break only if current bottle is not empty
+              switch (_dashboardLiquid)
+              {
+                case eLiquid1:
+                  if (_barBottle1 != eEmpty) { secureCounter = 3; }
+                  break;
+                case eLiquid2:
+                  if (_barBottle2 != eEmpty) { secureCounter = 3; }
+                  break;
+                case eLiquid3:
+                  if (_barBottle3 != eEmpty) { secureCounter = 3; }
+                  break;
+                default:
+                  secureCounter = 3;
+                  break;
+              }
+            }
+            while (secureCounter++ < 3);
+          }
 
           // Update all values
           UpdateValues();
           
-          // Draw legend and doughnut chart in partial updating mode
-          Display.DrawLegend();
-          Display.DrawDoughnutChart3(false);
-          
+          if (config.isMixer)
+          {
+            // Draw legend and doughnut chart in partial updating mode
+            Display.DrawLegend();
+            Display.DrawDoughnutChart3(false);
+          }
+          else
+          {
+            // Draw bar
+            Display.DrawBar(true);
+          }
+
           // Debounce settings change
           delay(200);
         }
@@ -502,7 +679,7 @@ void StateMachine::FctCleaning(MixerEvent event)
           UpdateValues();
 
           // Draw checkboxes
-          Display.DrawCheckBoxes();
+          Display.DrawCheckBoxes(_cleaningLiquid);
 
           // Debounce settings change
           delay(200);
@@ -588,6 +765,155 @@ void StateMachine::FctReset(MixerEvent event)
           // Exit reset mode and return to dashboard mode
           Execute(eExit);
           _currentState = eDashboard;
+          Execute(eEntry);
+          return;
+        }
+      }
+      break;
+    case eExit:
+    default:
+      break;
+  }
+}
+
+
+//===============================================================
+// Function bar state
+//===============================================================
+void StateMachine::FctBar(MixerEvent event)
+{
+  switch(event)
+  {
+    case eEntry:
+      {        
+        // Update all values
+        UpdateValues();
+        
+        // Show bar page
+        ESP_LOGI(TAG, "Enter Bar mode");
+        Display.ShowBarPage();
+
+        // Debounce page change
+        delay(500);
+
+        // Reset and ignore user input
+        EncoderButton.GetEncoderIncrements();
+        EncoderButton.IsButtonPress();
+        EncoderButton.IsLongButtonPress();
+      }
+      break;
+    case eMain:
+      {
+        // Read encoder increments (resets the counter value)
+        int16_t currentEncoderIncrements = EncoderButton.GetEncoderIncrements();
+
+        // Will be true, if new encoder position is available
+        if (currentEncoderIncrements != 0)
+        {
+          // Increment or decrement current setting value
+          switch (_dashboardLiquid)
+          {
+            case eLiquid1:
+              {
+                bool hasAlreadySparklingWater = _barBottle2 == eSparklingWater || _barBottle3 == eSparklingWater;
+                if (currentEncoderIncrements > 0)
+                {
+                  _barBottle1 = _barBottle1 + 1 >= (BarBottle)BarBottleMax ? (hasAlreadySparklingWater ? eEmpty : eSparklingWater) : (BarBottle)(_barBottle1 + 1);
+                }
+                else
+                {
+                  _barBottle1 = _barBottle1 - 1 < (hasAlreadySparklingWater ? eEmpty : eSparklingWater) ? (BarBottle)(BarBottleMax - 1) : (BarBottle)(_barBottle1 - 1);
+                }
+              }
+              break;
+            case eLiquid2:
+              {
+                bool hasAlreadySparklingWater = _barBottle1 == eSparklingWater || _barBottle3 == eSparklingWater;
+                if (currentEncoderIncrements > 0)
+                {
+                  _barBottle2 = _barBottle2 + 1 >= (BarBottle)BarBottleMax ? (hasAlreadySparklingWater ? eEmpty : eSparklingWater) : (BarBottle)(_barBottle2 + 1);
+                }
+                else
+                {
+                  _barBottle2 = _barBottle2 - 1 < (hasAlreadySparklingWater ? eEmpty : eSparklingWater) ? (BarBottle)(BarBottleMax - 1) : (BarBottle)(_barBottle2 - 1);
+                }
+              }
+              break;
+            case eLiquid3:
+              {
+                bool hasAlreadySparklingWater = _barBottle1 == eSparklingWater || _barBottle2 == eSparklingWater;
+                if (currentEncoderIncrements > 0)
+                {
+                  _barBottle3 = _barBottle3 + 1 >= (BarBottle)BarBottleMax ? (hasAlreadySparklingWater ? eEmpty : eSparklingWater) : (BarBottle)(_barBottle3 + 1);
+                }
+                else
+                {
+                  _barBottle3 = _barBottle3 - 1 < (hasAlreadySparklingWater ? eEmpty : eSparklingWater) ? (BarBottle)(BarBottleMax - 1) : (BarBottle)(_barBottle3 - 1);
+                }
+              }
+              break;
+            default:
+              break;
+          }
+
+          // Short beep sound
+          tone(_pinBuzzer, 500, 40);
+
+          // Update display and pump values
+          UpdateValues();
+          
+          // Draw bar
+          Display.DrawBar(false);
+          
+          // Debounce settings change
+          delay(200);
+        }
+
+#if defined(WIFI_MIXER)
+        // Draw wifi icons
+        Display.DrawWifiIcons();
+#endif
+
+        // Check for button press
+        if (EncoderButton.IsButtonPress())
+        {
+          // Short beep sound
+          tone(_pinBuzzer, 500, 40);
+
+          // Incrementing the setting value taking into account the overflow
+          _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
+
+          // Update all values
+          UpdateValues();
+          
+          // Draw bar
+          Display.DrawBar(false);
+          
+          // Debounce settings change
+          delay(200);
+        }
+
+        // Check for long button press
+        if (EncoderButton.IsLongButtonPress())
+        {
+          // Short beep sound
+          tone(_pinBuzzer, 800, 40);
+
+          // Exit bar mode and return to menu mode
+          Execute(eExit);
+          _currentState = eMenu;
+          _currentMenuState = eBar;
+          Execute(eEntry);
+          return;
+        }
+
+         // Check for screen saver timeout
+        if (millis() - Systemhelper.GetLastUserAction() > SCREENSAVER_TIMEOUT_MS)
+        {
+          // Exit bar mode and enter screen saver mode
+          Execute(eExit);
+          _lastState = eBar;
+          _currentState = eScreenSaver;
           Execute(eEntry);
           return;
         }
@@ -770,59 +1096,62 @@ void StateMachine::SetMixtureDefaults()
 //===============================================================
 void StateMachine::UpdateValues(uint32_t clientID)
 {
-  int16_t liquid1Distance_Degrees = GetDistanceDegrees(_liquid1Angle_Degrees, _liquid2Angle_Degrees);
-  int16_t liquid2Distance_Degrees = GetDistanceDegrees(_liquid2Angle_Degrees, _liquid3Angle_Degrees);
-  int16_t liquid3Distance_Degrees = GetDistanceDegrees(_liquid3Angle_Degrees, _liquid1Angle_Degrees);
-
-  // Avoid minimal setable value >0%. If an angle is at its min angle, mute
-  // it to zero and add the angle distance to the greater one of the two others
-  if (liquid1Distance_Degrees == MINANGLE_DEGREES)
+  if (config.isMixer)
   {
-    if (liquid2Distance_Degrees > liquid3Distance_Degrees)
-    {
-      liquid2Distance_Degrees += liquid1Distance_Degrees;
-    }
-    else
-    {
-      liquid3Distance_Degrees += liquid1Distance_Degrees;
-    }
-    liquid1Distance_Degrees = 0;
-  }
+    int16_t liquid1Distance_Degrees = GetDistanceDegrees(_liquid1Angle_Degrees, _liquid2Angle_Degrees);
+    int16_t liquid2Distance_Degrees = GetDistanceDegrees(_liquid2Angle_Degrees, _liquid3Angle_Degrees);
+    int16_t liquid3Distance_Degrees = GetDistanceDegrees(_liquid3Angle_Degrees, _liquid1Angle_Degrees);
 
-  // Avoid minimal setable value >0%. If an angle is at its min angle, mute
-  // it to zero and add the angle distance to the greater one of the two others
-  if (liquid2Distance_Degrees == MINANGLE_DEGREES)
-  {
-    if (liquid1Distance_Degrees > liquid3Distance_Degrees)
+    // Avoid minimal setable value >0%. If an angle is at its min angle, mute
+    // it to zero and add the angle distance to the greater one of the two others
+    if (liquid1Distance_Degrees == MINANGLE_DEGREES)
     {
-      liquid1Distance_Degrees += liquid2Distance_Degrees;
+      if (liquid2Distance_Degrees > liquid3Distance_Degrees)
+      {
+        liquid2Distance_Degrees += liquid1Distance_Degrees;
+      }
+      else
+      {
+        liquid3Distance_Degrees += liquid1Distance_Degrees;
+      }
+      liquid1Distance_Degrees = 0;
     }
-    else
-    {
-      liquid3Distance_Degrees += liquid2Distance_Degrees;
-    }
-    liquid2Distance_Degrees = 0;
-  }
 
-  // Avoid minimal setable value >0%. If an angle is at its min angle, mute
-  // it to zero and add the angle distance to the greater one of the two others
-  if (liquid3Distance_Degrees == MINANGLE_DEGREES)
-  {
-    if (liquid1Distance_Degrees > liquid2Distance_Degrees)
+    // Avoid minimal setable value >0%. If an angle is at its min angle, mute
+    // it to zero and add the angle distance to the greater one of the two others
+    if (liquid2Distance_Degrees == MINANGLE_DEGREES)
     {
-      liquid1Distance_Degrees += liquid3Distance_Degrees;
+      if (liquid1Distance_Degrees > liquid3Distance_Degrees)
+      {
+        liquid1Distance_Degrees += liquid2Distance_Degrees;
+      }
+      else
+      {
+        liquid3Distance_Degrees += liquid2Distance_Degrees;
+      }
+      liquid2Distance_Degrees = 0;
     }
-    else
-    {
-      liquid2Distance_Degrees += liquid3Distance_Degrees;
-    }
-    liquid3Distance_Degrees = 0;
-  }
 
-  // Calculate percentage values
-  _liquid1_Percentage = (double)liquid1Distance_Degrees * 100.0 / 360.0;
-  _liquid2_Percentage = (double)liquid2Distance_Degrees * 100.0 / 360.0;
-  _liquid3_Percentage = (double)liquid3Distance_Degrees * 100.0 / 360.0;
+    // Avoid minimal setable value >0%. If an angle is at its min angle, mute
+    // it to zero and add the angle distance to the greater one of the two others
+    if (liquid3Distance_Degrees == MINANGLE_DEGREES)
+    {
+      if (liquid1Distance_Degrees > liquid2Distance_Degrees)
+      {
+        liquid1Distance_Degrees += liquid3Distance_Degrees;
+      }
+      else
+      {
+        liquid2Distance_Degrees += liquid3Distance_Degrees;
+      }
+      liquid3Distance_Degrees = 0;
+    }
+
+    // Calculate percentage values
+    _liquid1_Percentage = (double)liquid1Distance_Degrees * 100.0 / 360.0;
+    _liquid2_Percentage = (double)liquid2Distance_Degrees * 100.0 / 360.0;
+    _liquid3_Percentage = (double)liquid3Distance_Degrees * 100.0 / 360.0;
+  }
 
   // Update display driver
   Display.SetMenuState(_currentMenuState);
@@ -831,12 +1160,49 @@ void StateMachine::UpdateValues(uint32_t clientID)
   Display.SetAngles(_liquid1Angle_Degrees, _liquid2Angle_Degrees, _liquid3Angle_Degrees);
   Display.SetPercentages(_liquid1_Percentage, _liquid2_Percentage, _liquid3_Percentage);
   
+  bool hasSparklingWater = _barBottle1 == eSparklingWater || _barBottle2 == eSparklingWater || _barBottle3 == eSparklingWater;
+  
   // Update pump driver
   switch (_currentState)
   {
     case eDashboard:
       {
-        Pumps.SetPumps(_liquid1_Percentage, _liquid2_Percentage, _liquid3_Percentage);
+        if (config.isMixer)
+        {
+          Pumps.SetPumps(_liquid1_Percentage, _liquid2_Percentage, _liquid3_Percentage);
+        }
+        else
+        {
+          if (hasSparklingWater)
+          {
+            switch (_dashboardLiquid)
+            {
+              case eLiquid1:
+                {
+                  double sparklingWaterPercetage = _liquid1_Percentage;
+                  double winePercetage = 100.0 - sparklingWaterPercetage;
+                  Pumps.SetPumps(winePercetage, _barBottle2 == eSparklingWater ? sparklingWaterPercetage : 0.0, _barBottle3 == eSparklingWater ? sparklingWaterPercetage : 0.0);
+                }
+                break;
+              case eLiquid2:
+                {
+                  double sparklingWaterPercetage = _liquid2_Percentage;
+                  double winePercetage = 100.0 - sparklingWaterPercetage;
+                  Pumps.SetPumps(_barBottle1 == eSparklingWater ? sparklingWaterPercetage : 0.0, winePercetage, _barBottle3 == eSparklingWater ? sparklingWaterPercetage : 0.0);
+                }
+                break;
+              case eLiquid3:
+                {
+                  double sparklingWaterPercetage = _liquid3_Percentage;
+                  double winePercetage = 100.0 - sparklingWaterPercetage;
+                  Pumps.SetPumps(_barBottle1 == eSparklingWater ? sparklingWaterPercetage : 0.0, _barBottle2 == eSparklingWater ? sparklingWaterPercetage : 0.0, winePercetage);
+                }
+                break;
+              default:
+                break;
+            }
+          }
+        }
       }
       break;
     case eCleaning:
@@ -850,6 +1216,7 @@ void StateMachine::UpdateValues(uint32_t clientID)
     default:
     case eMenu:
     case eReset:
+    case eBar:
     case eSettings:
       {
         Pumps.SetPumps(0.0, 0.0, 0.0); // zero (0%)

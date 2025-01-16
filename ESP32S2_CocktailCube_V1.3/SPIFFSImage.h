@@ -45,10 +45,13 @@ class SPIFFSImage
     uint16_t* GetBuffer() const { return _buffer; }
     
     // Draws the canvas on the tft
-    void Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t transparencyColor);
+    void Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t transparencyColor, uint16_t shadowColor = 0, bool asShadow = false);
+
+    // Clears the difference between two images
+    void ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, SPIFFSImage* otherImage, Adafruit_SPITFT* tft, uint16_t transparencyColor, uint16_t clearColor);
 
     // Moves the canvas on the tft
-    void Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_SPITFT* tft, uint16_t clearColor, uint16_t transparencyColor);
+    void Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_SPITFT* tft, uint16_t clearColor, uint16_t transparencyColor, bool onlyClear = false);
 
     // Return a pixel at the requested position
     uint16_t GetPixel(int16_t x, int16_t y);

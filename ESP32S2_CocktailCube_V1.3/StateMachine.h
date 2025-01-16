@@ -84,6 +84,11 @@ class StateMachine
     // Cleaning mode settings
     MixtureLiquid _cleaningLiquid = eLiquidAll;
 
+    // Bar settings
+    BarBottle _barBottle1 = eRedWine;
+    BarBottle _barBottle2 = eWhiteWine;
+    BarBottle _barBottle3 = eRoseWine;
+
     // Timer variables for reset counter
     uint32_t _resetTimestamp = 0;
     const uint32_t ResetTime_ms = 2000;
@@ -112,6 +117,9 @@ class StateMachine
     // Function cleaning state
     void FctCleaning(MixerEvent event);
 
+    // Function bar state
+    void FctBar(MixerEvent event);
+    
     // Function reset state
     void FctReset(MixerEvent event);
 

@@ -52,7 +52,7 @@ void DisplayDriver::Begin(Adafruit_ST7789* tft)
 
   // Show starting message
   _tft->setTextColor(ST77XX_WHITE);
-  DrawCenteredString("Booting...", x, y, false, 0);
+  DrawCenteredString("Booting...", x, y);
 
   // Log startup info
   ESP_LOGI(TAG, "Finished initializing display driver");
@@ -156,6 +156,16 @@ void DisplayDriver::SetPercentages(double liquid1_Percentage, double liquid2_Per
   _liquid1_Percentage = liquid1_Percentage;
   _liquid2_Percentage = liquid2_Percentage;
   _liquid3_Percentage = liquid3_Percentage;
+}
+
+//===============================================================
+// Sets the bar stock
+//===============================================================
+void DisplayDriver::SetBar(BarBottle barBottle1, BarBottle barBottle2, BarBottle barBottle3)
+{
+  _barBottle1 = barBottle1;
+  _barBottle2 = barBottle2;
+  _barBottle3 = barBottle3;
 }
 
 //===============================================================
@@ -305,22 +315,30 @@ void DisplayDriver::ShowDashboardPage()
   // Draw header information
   DrawHeader();
   
-  // Draw chart in first draw mode
-  DrawDoughnutChart3();
+  if (config.isMixer)
+  {
+    // Draw chart in first draw mode
+    DrawDoughnutChart3();
 
-  // Draw legend
-  DrawLegend();
+    // Draw legend
+    DrawLegend();
 
-  // Draw current value string
-  DrawCurrentValues(true);
+    // Draw current value string
+    DrawCurrentValues(true);
 
-  int16_t x0 = X0_DOUGHNUTCHART;
-  int16_t y0 = TFT_HEIGHT - 30;
+    int16_t x0 = X0_DOUGHNUTCHART;
+    int16_t y0 = TFT_HEIGHT - 30;
 
-  // Draw enjoy message
-  _tft->setTextSize(1);
-  _tft->setTextColor(config.tftColorForeground);
-  DrawCenteredString("Enjoy it!", x0, y0, false, 0);
+    // Draw enjoy message
+    _tft->setTextSize(1);
+    _tft->setTextColor(config.tftColorForeground);
+    DrawCenteredString("Enjoy it!", x0, y0);
+  }
+  else
+  {
+    // Draw bar
+    Display.DrawBar(true, true);
+  }
 }
 
 //===============================================================
@@ -337,8 +355,30 @@ void DisplayDriver::ShowCleaningPage()
   // Draw header information
   DrawHeader("Cleaning Mode");
 
+  int16_t x = TFT_WIDTH / 2;
+  int16_t y = TFT_HEIGHT / 3;
+  
+  // Print selection text
+  _tft->setTextColor(config.tftColorForeground);
+  DrawCenteredString("Select pumps for cleaning:", x, y);
+
   // Draw checkboxes
-  DrawCheckBoxes();
+  DrawCheckBoxes(_cleaningLiquid);
+}
+
+//===============================================================
+// Shows bar page
+//===============================================================
+void DisplayDriver::ShowBarPage()
+{
+  // Clear screen
+  _tft->fillScreen(config.tftColorBackground);
+  
+  // Draw header information
+  DrawHeader("Bar Stock");
+  
+  // Draw bar
+  Display.DrawBar(false, true);
 }
 
 //===============================================================
@@ -451,7 +491,7 @@ void DisplayDriver::DrawHeader(const String &text, bool withIcons)
   // Draw header text
   _tft->setTextSize(1);
   _tft->setTextColor(config.tftColorTextHeader);
-  DrawCenteredString(text, x, y, false, 0);
+  DrawCenteredString(text, x, y);
 
   x = HEADER_MARGIN;
   y = HEADEROFFSET_Y;
@@ -536,8 +576,8 @@ void DisplayDriver::DrawInfoBox(const String &line1, const String &line2)
   // Fill in info text
   _tft->setTextSize(1);
   _tft->setTextColor(config.tftColorInfoBoxForeground);
-  DrawCenteredString(line1, x, y - (SHORTLINEOFFSET / 2), false, 0);
-  DrawCenteredString(line2, x, y + (SHORTLINEOFFSET / 2), false, 0);
+  DrawCenteredString(line1, x, y - (SHORTLINEOFFSET / 2));
+  DrawCenteredString(line2, x, y + (SHORTLINEOFFSET / 2));
 }
 
 //===============================================================
@@ -576,7 +616,14 @@ void DisplayDriver::DrawMenu(bool isfullUpdate)
     _tft->setCursor(x, y += MENU_LINEOFFSET);
     _tft->print("Cleaning Mode");
     _tft->setCursor(x, y += MENU_LINEOFFSET);
-    _tft->print("Reset Mixture");
+    if (config.isMixer)
+    {
+      _tft->print("Reset Mixture");
+    }
+    else
+    {
+      _tft->print("Bar Stock");
+    }
     _tft->setCursor(x, y += MENU_LINEOFFSET);
     _tft->print("Settings");
   }
@@ -602,51 +649,82 @@ void DisplayDriver::DrawMenu(bool isfullUpdate)
 }
 
 //===============================================================
+// Draw bar
+//===============================================================
+void DisplayDriver::DrawBar(bool isDashboard, bool isfullUpdate)
+{
+  int16_t spacing = 78;
+  int16_t x0 = TFT_WIDTH / 2; // Mid screen
+  int16_t y = HEADEROFFSET_Y + 10;
+
+  // Draw only check boxes if complete bar stock is empty
+  if (isDashboard &&
+    _barBottle1 == eEmpty &&
+    _barBottle2 == eEmpty &&
+    _barBottle3 == eEmpty)
+  {
+    // Print selection text
+    _tft->setTextColor(config.tftColorForeground);
+    DrawCenteredString("Select WINE for dispensing:", x0, y + 25, false, 0, true, 0x528A); // Gray
+
+    // Draw checkboxes
+    DrawCheckBoxes(_dashboardLiquid);
+  }
+  else
+  {
+    // Draw each bottle
+    DrawBarPart(x0 - spacing, y, eLiquid1, _barBottle1, _lastDraw_barBottle1, _liquid1_Percentage, _lastDraw_liquid1_Percentage, config.liquid1Name, config.tftColorLiquid1, isDashboard, isfullUpdate);
+    DrawBarPart(x0,           y, eLiquid2, _barBottle2, _lastDraw_barBottle2, _liquid2_Percentage, _lastDraw_liquid2_Percentage, config.liquid2Name, config.tftColorLiquid2, isDashboard, isfullUpdate);
+    DrawBarPart(x0 + spacing, y, eLiquid3, _barBottle3, _lastDraw_barBottle3, _liquid3_Percentage, _lastDraw_liquid3_Percentage, config.liquid3Name, config.tftColorLiquid3, isDashboard, isfullUpdate);
+
+    if (isDashboard &&
+      (isfullUpdate || _dashboardLiquid != _lastDraw_SelectedLiquid))
+    {
+      // Print selection text
+      _tft->setTextColor(config.tftColorForeground);
+      DrawCenteredString("Select WINE for dispensing:", x0, y + 25, false, 0, true, 0x528A); // Gray
+    }
+
+    _lastDraw_SelectedLiquid = _dashboardLiquid;
+    _lastDraw_barBottle1 = _barBottle1;
+    _lastDraw_barBottle2 = _barBottle2;
+    _lastDraw_barBottle3 = _barBottle3;
+    _lastDraw_liquid1_Percentage = _liquid1_Percentage;
+    _lastDraw_liquid2_Percentage = _liquid2_Percentage;
+    _lastDraw_liquid3_Percentage = _liquid3_Percentage;
+  }
+}
+
+//===============================================================
 // Draw checkboxes
 //===============================================================
-void DisplayDriver::DrawCheckBoxes()
+void DisplayDriver::DrawCheckBoxes(MixtureLiquid liquid)
 {
-  int16_t x = TFT_WIDTH / 2;
-  int16_t y = TFT_HEIGHT / 3;
-  
-  // Print selection text
-  _tft->setTextColor(config.tftColorForeground);
-  DrawCenteredString("Select pumps for cleaning:", x, y, false, 0);
-
-  int16_t boxWidth = 30;
-  int16_t boxHeight = 30;
-  int16_t boxDistance = TFT_WIDTH * 2 / 7;
-
-  x = TFT_WIDTH / 7;
-  y = HEADEROFFSET_Y + TFT_HEIGHT / 3;
+  int16_t boxSize = 30;
+  int16_t spacing = 78;
+  int16_t x0 = TFT_WIDTH / 2; // Mid screen
+  int16_t y = HEADEROFFSET_Y + 80;
   
   // Draw checkboxes
-  _tft->drawRect(x,                y, boxWidth, boxHeight, config.tftColorForeground);
-  _tft->drawRect(x += boxDistance, y, boxWidth, boxHeight, config.tftColorForeground);
-  _tft->drawRect(x += boxDistance, y, boxWidth, boxHeight, config.tftColorForeground);
-
-  // Reduce rectangle for infill
-  x = TFT_WIDTH / 7 + 4;
-  y += 4;
-  boxWidth -= 8;
-  boxHeight -= 8;
+  _tft->drawRect(x0 - boxSize / 2 - spacing, y, boxSize, boxSize, config.tftColorForeground);
+  _tft->drawRect(x0 - boxSize / 2,           y, boxSize, boxSize, config.tftColorForeground);
+  _tft->drawRect(x0 - boxSize / 2 + spacing, y, boxSize, boxSize, config.tftColorForeground);
   
   // Draw activated checkboxes
-  _tft->fillRect(x,                y, boxWidth, boxHeight, _cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid1 ? config.tftColorStartPage : config.tftColorBackground);
-  _tft->fillRect(x += boxDistance, y, boxWidth, boxHeight, _cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid2 ? config.tftColorStartPage : config.tftColorBackground);
-  _tft->fillRect(x += boxDistance, y, boxWidth, boxHeight, _cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid3 ? config.tftColorStartPage : config.tftColorBackground);
+  _tft->fillRect(x0 - boxSize / 2 + 4 - spacing, y + 4, boxSize - 8, boxSize - 8, liquid == eLiquidAll || liquid == eLiquid1 ? config.tftColorStartPage : config.tftColorBackground);
+  _tft->fillRect(x0 - boxSize / 2 + 4,           y + 4, boxSize - 8, boxSize - 8, liquid == eLiquidAll || liquid == eLiquid2 ? config.tftColorStartPage : config.tftColorBackground);
+  _tft->fillRect(x0 - boxSize / 2 + 4 + spacing, y + 4, boxSize - 8, boxSize - 8, liquid == eLiquidAll || liquid == eLiquid3 ? config.tftColorStartPage : config.tftColorBackground);
 
   // Move under the boxes for liquid names
-  x = TFT_WIDTH / 7 + boxWidth / 2;
-  y += 2 * boxHeight;
+  y = HEADEROFFSET_Y + 140;
 
   // Draw liquid names
   _tft->setTextColor(config.tftColorLiquid1);
-  DrawCenteredString(config.liquid1Name, x,                y, false, 0);
+  DrawCenteredString(config.liquid1Name, x0 - spacing, y);
   _tft->setTextColor(config.tftColorLiquid2);
-  DrawCenteredString(config.liquid2Name, x += boxDistance, y, false, 0);
+  DrawCenteredString(config.liquid2Name, x0, y);
   _tft->setTextColor(config.tftColorLiquid3);
-  DrawCenteredString(config.liquid3Name, x += boxDistance, y, false, 0);
+  DrawCenteredString(config.liquid3Name, x0 + spacing, y);
 }
 
 //===============================================================
@@ -685,9 +763,9 @@ void DisplayDriver::DrawLegend()
   // Draw liquid text
   _tft->setTextSize(1);
   _tft->setTextColor(config.tftColorTextBody);  
-  DrawCenteredString(config.liquid1Name, x, y,                    true, _dashboardLiquid == eLiquid1 ? config.tftColorForeground : config.tftColorBackground);
-  DrawCenteredString(config.liquid2Name, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid2 ? config.tftColorForeground : config.tftColorBackground);
-  DrawCenteredString(config.liquid3Name, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid3 ? config.tftColorForeground : config.tftColorBackground);
+  DrawCenteredString(config.liquid1Name, x, y,                    true, _dashboardLiquid == eLiquid1 ? config.tftColorForeground : config.tftColorBackground, false, 0);
+  DrawCenteredString(config.liquid2Name, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid2 ? config.tftColorForeground : config.tftColorBackground, false, 0);
+  DrawCenteredString(config.liquid3Name, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid3 ? config.tftColorForeground : config.tftColorBackground, false, 0);
 }
 
 //===============================================================
@@ -1085,9 +1163,167 @@ void DisplayDriver::DrawStarTail(int16_t x0, int16_t y0, int16_t start, int16_t 
 }
 
 //===============================================================
+// Draws a part of the bar
+//===============================================================
+void DisplayDriver::DrawBarPart(int16_t x0, int16_t y, MixtureLiquid liquid, BarBottle barBottle, BarBottle lastDraw_barBottle, int16_t liquid_Percentage, int16_t lastDraw_liquid_Percentage, String name, uint16_t color, bool isDashboard, bool isfullUpdate)
+{
+  int16_t namesOffsetX = 15;
+  int16_t namesOffsetY = 175;
+  
+  bool isEmpty = barBottle == eEmpty;
+  bool selectedChanged = _dashboardLiquid != _lastDraw_SelectedLiquid;
+  bool bottleChanged = barBottle != lastDraw_barBottle;
+  bool sparklingWaterChanged = liquid_Percentage != lastDraw_liquid_Percentage;
+  bool isSelected = _dashboardLiquid == liquid;
+  bool wasSelected = _lastDraw_SelectedLiquid == liquid;
+  bool hasSparklingWater = _barBottle1 == eSparklingWater || _barBottle2 == eSparklingWater || _barBottle3 == eSparklingWater;
+
+  // Reset old bottle type selection -> only if bottle type changed
+  if (bottleChanged)
+  {
+    SelectBarBottle(lastDraw_barBottle, x0, y, config.tftColorBackground);
+  }
+
+  // Reset current bottle type selection -> only if selection changed and was selected
+  if (selectedChanged && wasSelected)
+  {
+    SelectBarBottle(barBottle, x0, y, config.tftColorBackground);
+  }
+
+  // Clear current bottle type -> only if bottle type changed
+  if (bottleChanged)
+  {
+    ClearBarBottle(lastDraw_barBottle, barBottle, x0, y, config.tftColorBackground);
+  }
+  
+  // Draw current bottle selection -> only if selected AND (full update OR bottle changed OR selected changed)
+  if (isSelected &&
+    (isfullUpdate || bottleChanged || selectedChanged))
+  {
+    SelectBarBottle(barBottle, x0, y, config.tftColorForeground);
+  }
+  
+  // Draw current bottle and checkbox -> only if full update or bottle type changed
+  if (isfullUpdate || bottleChanged)
+  {
+    // Draw bottle image
+    DrawBarBottle(barBottle, x0, y);
+  }
+
+  // Draw liquid name -> only if full update, bottle type changed or selected changed
+  if (isfullUpdate || bottleChanged || selectedChanged)
+  {
+    // Draw liquid name
+    _tft->setTextColor(color);
+    _tft->fillRect(x0 - namesOffsetX - 17, y + namesOffsetY - 15, 54, 30, config.tftColorBackground);
+    DrawCenteredString(name, x0 - namesOffsetX, y + namesOffsetY);
+  }
+
+  // Draw sparkling water percentage -> only if any sparkling water is present and not beside itself
+  if (isDashboard &&
+    !isEmpty &&
+    hasSparklingWater &&
+    barBottle != eSparklingWater &&
+    (isfullUpdate || sparklingWaterChanged))
+  {
+    int16_t x = x0 - 37;
+    int16_t yTop = y + namesOffsetY - 120;
+
+    // Draw bar graph
+    _tft->fillRect(x, yTop, 3, 100 - liquid_Percentage, color);
+    _tft->fillRect(x, yTop + 100 - liquid_Percentage, 3, liquid_Percentage, config.tftColorForeground);
+
+    // Draw percentage
+    _tft->fillRect(x - 10, yTop - 15, 27, 20, config.tftColorBackground);
+    _tft->setTextColor(color);
+    DrawCenteredString(String(liquid_Percentage), x + 3, yTop - 5);
+  }
+}
+
+//===============================================================
+// Clears the difference from a bar bottle to the next bottle
+//===============================================================
+void DisplayDriver::ClearBarBottle(BarBottle lastDraw_barBottle, BarBottle barBottle, int16_t x0, int16_t y, uint16_t clearColor)
+{
+  if (_imagesAvailable != IMAGE_SUCCESS ||
+    lastDraw_barBottle == eEmpty)
+  {
+    return;
+  }
+
+  // Determine image pointers
+  SPIFFSImage* barBottlePointerLast = GetBarBottlePointer(lastDraw_barBottle);
+  SPIFFSImage* barBottlePointerNew = GetBarBottlePointer(barBottle);
+
+  // Clear difference from last to new image
+  int16_t xLast = x0 - barBottlePointerLast->Width() / 2;
+  int16_t xNew = x0 - barBottlePointerNew->Width() / 2;
+  barBottlePointerLast->ClearDiff(xLast, y, xNew, y, barBottlePointerNew, _tft, config.tftTransparencyColor, clearColor);
+}
+
+//===============================================================
+// Draws a bar bottle
+//===============================================================
+void DisplayDriver::DrawBarBottle(BarBottle barBottle, int16_t x0, int16_t y)
+{
+  if (_imagesAvailable != IMAGE_SUCCESS)
+  {
+    return;
+  }
+  
+  // Determine correct pointer
+  SPIFFSImage* barBottlePointer = GetBarBottlePointer(barBottle);
+
+  // Draw bottle
+  int16_t x = x0 - barBottlePointer->Width() / 2;
+  barBottlePointer->Draw(x, y, _tft, config.tftTransparencyColor, config.tftColorBackground, barBottle == eEmpty); // Use red wine bottle for empty selection (draw as shadow -> black)
+}
+
+//===============================================================
+// Draws a selection around a bar bottle
+//===============================================================
+void DisplayDriver::SelectBarBottle(BarBottle barBottle, int16_t x0, int16_t y, uint16_t color)
+{
+  if (_imagesAvailable != IMAGE_SUCCESS)
+  {
+    return;
+  }
+
+  // Determine correct pointer
+  SPIFFSImage* barBottlePointer = GetBarBottlePointer(barBottle);
+
+  // Draw selection shadow with move function
+  int16_t selectionWidth = 3;
+  int16_t x = x0 - barBottlePointer->Width() / 2;
+  barBottlePointer->Move(x - selectionWidth, y, x, y, _tft, color, config.tftTransparencyColor, true);
+  barBottlePointer->Move(x + selectionWidth, y, x, y, _tft, color, config.tftTransparencyColor, true);
+  barBottlePointer->Move(x, y - selectionWidth, x, y, _tft, color, config.tftTransparencyColor, true);
+}
+
+//===============================================================
+// Returns a pointer to the requested bar bottle image
+//===============================================================
+SPIFFSImage* DisplayDriver::GetBarBottlePointer(BarBottle barBottle)
+{
+  switch (barBottle)
+  {
+    case eWhiteWine:
+      return _imageBottle2;
+    case eRoseWine:
+      return _imageBottle3;
+    case eSparklingWater:
+      return _imageBottle4;
+    case eRedWine:
+    case eEmpty:
+    default:
+      return _imageBottle1;
+  }
+}
+
+//===============================================================
 // Draws a string centered
 //===============================================================
-void DisplayDriver::DrawCenteredString(const String &text, int16_t x, int16_t y, bool underlined, uint16_t lineColor)
+void DisplayDriver::DrawCenteredString(const String& text, int16_t x, int16_t y, bool underlined, uint16_t lineColor, bool backGround, uint16_t backGroundColor)
 {
   // Get text bounds
   int16_t x1, y1;
@@ -1098,7 +1334,13 @@ void DisplayDriver::DrawCenteredString(const String &text, int16_t x, int16_t y,
   int16_t x_text = x - w / 2;
   int16_t y_text = y + h / 2;
   _tft->setCursor(x_text, y_text);
-  
+
+  // Draw background if active
+  if (backGround)
+  {
+    _tft->fillRect(x_text - 2, y - h /2, w + 4, h + 4, backGroundColor);
+  }
+
   // Print text
   _tft->print(text);
 

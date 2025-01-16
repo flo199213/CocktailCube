@@ -85,7 +85,7 @@ void SPIFFSImage::Deallocate()
 //===============================================================
 // Draws the canvas on the tft
 //===============================================================
-void SPIFFSImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t transparencyColor)
+void SPIFFSImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t transparencyColor, uint16_t shadowColor, bool asShadow)
 {
   if (!_buffer)
   {
@@ -98,10 +98,54 @@ void SPIFFSImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t tran
   {
     for (int16_t column = 0; column < _width; column++)
     {
-      uint16_t currentPixel = _buffer[row * _width + column];
-      if (currentPixel != transparencyColor)
+      uint16_t currentColor = _buffer[row * _width + column];
+      if (currentColor != transparencyColor)
       {
-        tft->writePixel(x + column, y + row, currentPixel);
+        tft->writePixel(x + column, y + row, asShadow ? shadowColor : currentColor);
+      }
+    }
+  }
+  tft->endWrite();
+}
+
+//===============================================================
+// Clears the difference between two images
+//===============================================================
+void SPIFFSImage::ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, SPIFFSImage* otherImage, Adafruit_SPITFT* tft, uint16_t transparencyColor, uint16_t clearColor)
+{
+  if (otherImage == NULL)
+  {
+    return;
+  }
+ 
+  uint16_t* otherBuffer = otherImage->GetBuffer();
+  int16_t otherHeight = otherImage->Height();
+  int16_t otherWidth = otherImage->Width();
+
+  // Write pixels
+  tft->startWrite();
+  for (int16_t row = 0; row < _height; row++)
+  {
+    for (int16_t column = 0; column < _width; column++)
+    {
+      uint16_t currentColor = _buffer[row * _width + column];
+      
+      // Calculate other indexes
+      int16_t otherColumn = column - (x1 - x0);
+      int16_t otherRow = row - (y1 - y0);
+
+      uint16_t otherColor = transparencyColor + 1; // Use color != transparencyColor
+      if (otherColumn > 0 && otherColumn < otherWidth &&
+        otherRow > 0 && otherRow < otherHeight)
+      {
+        otherColor = otherBuffer[otherRow * otherWidth + otherColumn];
+      }
+
+      // Clear color, if current color is not transparent and other color is (must be reset)
+      if (currentColor != transparencyColor &&
+        otherColor == transparencyColor)
+      {
+        tft->writePixel(x0 + column, y0 + row, clearColor);
       }
     }
   }
@@ -111,7 +155,7 @@ void SPIFFSImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t tran
 //===============================================================
 // Moves the canvas on the tft
 //===============================================================
-void SPIFFSImage::Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_SPITFT* tft, uint16_t clearColor, uint16_t transparencyColor)
+void SPIFFSImage::Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_SPITFT* tft, uint16_t clearColor, uint16_t transparencyColor, bool onlyClear)
 {
   if (!_buffer)
   {
@@ -148,9 +192,12 @@ void SPIFFSImage::Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_
     }
   }
   tft->endWrite();
-
-  // Draw new (moved) image
-  Draw(x1, y1, tft, transparencyColor);
+  
+  if (!onlyClear)
+  {
+    // Draw new (moved) image
+    Draw(x1, y1, tft, transparencyColor);
+  }
 }
 
 //===============================================================

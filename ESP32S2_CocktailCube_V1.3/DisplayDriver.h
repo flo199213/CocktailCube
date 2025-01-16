@@ -205,6 +205,9 @@ class DisplayDriver
     // Sets the percentage values
     void SetPercentages(double liquid1_Percentage, double liquid2_Percentage, double liquid3_Percentage);
 
+    // Sets the bar stock
+    void SetBar(BarBottle barBottle1, BarBottle barBottle2, BarBottle barBottle3);
+
     // Shows intro page
     void ShowIntroPage();
     
@@ -219,6 +222,9 @@ class DisplayDriver
     
     // Shows cleaning page
     void ShowCleaningPage();
+
+    // Shows bar page
+    void ShowBarPage();
 
     // Shows settings page
     void ShowSettingsPage();
@@ -235,8 +241,11 @@ class DisplayDriver
     // Draws the menu partially
     void DrawMenu(bool isfullUpdate = false);
 
+    // Draw bar
+    void DrawBar(bool isDashboard, bool isfullUpdate = false);
+
     // Draw checkboxes
-    void DrawCheckBoxes();
+    void DrawCheckBoxes(MixtureLiquid liquid);
     
     // Draws the legend
     void DrawLegend();
@@ -274,16 +283,24 @@ class DisplayDriver
     // Current mixture settings
     MixerState _menuState = eDashboard;
     MixtureLiquid _dashboardLiquid = eLiquid1;
-    MixtureLiquid _cleaningLiquid = eLiquidAll;
     int16_t _liquid1Angle_Degrees = 0;
     int16_t _liquid2Angle_Degrees = 0;
     int16_t _liquid3Angle_Degrees = 0;
     double _liquid1_Percentage = 0.0;
     double _liquid2_Percentage = 0.0;
     double _liquid3_Percentage = 0.0;
+
+    // Cleaning mode settings
+    MixtureLiquid _cleaningLiquid = eLiquidAll;
+    
+    // Bar settings
+    BarBottle _barBottle1 = eRedWine;
+    BarBottle _barBottle2 = eWhiteWine;
+    BarBottle _barBottle3 = eRoseWine;
         
     // Last draw values
     MixerState _lastDraw_MenuState = eDashboard;
+    MixtureLiquid _lastDraw_SelectedLiquid = eLiquidNone;
     int16_t _lastDraw_liquid1Angle_Degrees = 0;
     int16_t _lastDraw_liquid2Angle_Degrees = 0;
     int16_t _lastDraw_liquid3Angle_Degrees = 0;
@@ -293,6 +310,9 @@ class DisplayDriver
     String _lastDraw_Liquid1String = "";
     String _lastDraw_Liquid2String = "";
     String _lastDraw_Liquid3String = "";
+    BarBottle _lastDraw_barBottle1 = eEmpty;
+    BarBottle _lastDraw_barBottle2 = eEmpty;
+    BarBottle _lastDraw_barBottle3 = eEmpty;
     uint32_t _lastDraw_cycleTimespan_ms = 0;
     wifi_mode_t _lastDraw_wifiMode = WIFI_MODE_NULL;
     uint16_t _lastDraw_ConnectedClients = 0;
@@ -316,8 +336,23 @@ class DisplayDriver
     // Draws an arc with a defined thickness
     void FillArc(int16_t start_angle, int16_t distance_Degrees, uint16_t color);
     
+    // Draws a part of the bar
+    void DrawBarPart(int16_t x0, int16_t y, MixtureLiquid liquid, BarBottle barBottle, BarBottle lastDraw_barBottle, int16_t liquid_Percentage, int16_t lastDraw_liquid_Percentage, String name, uint16_t color, bool isDashboard, bool isfullUpdate);
+    
+    // Clears the difference from a bar bottle to the next bottle
+    void ClearBarBottle(BarBottle lastDraw_barBottle, BarBottle barBottle, int16_t x0, int16_t y, uint16_t clearColor);
+
+    // Draws a bar bottle
+    void DrawBarBottle(BarBottle barBottle, int16_t x0, int16_t y);
+
+    // Draws a selection around a bar bottle
+    void SelectBarBottle(BarBottle barBottle, int16_t x0, int16_t y, uint16_t color);
+
+    // Returns a pointer to the requested bar bottle image
+    SPIFFSImage* GetBarBottlePointer(BarBottle barBottle);
+    
     // Draws a string centered
-    void DrawCenteredString(const String &text, int16_t x, int16_t y, bool underlined, uint16_t lineColor);
+    void DrawCenteredString(const String &text, int16_t x, int16_t y, bool underlined = false, uint16_t lineColor = 0, bool backGround = false, uint16_t backGroundColor = 0);
     
     // Formats double value
     String FormatValue(double value, int mainPlaces, int decimalPlaces);
