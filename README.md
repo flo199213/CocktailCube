@@ -1,7 +1,7 @@
 # CocktailCube
-Sourcecode for CocktailCube Devices powered by ESP32S2 custom board (PCB)
+Sourcecode for CocktailCube Devices powered by ESP32-S2 custom board (PCB)
 
-You can download the 3D print files required for the assembly from Cults, printables or makerworld.
+You can download the 3D print files required for the assembly from cults, printables or makerworld.
 
 Page | Link
 -------- | --------
@@ -19,7 +19,7 @@ PCB + Kit: | <a href="https://aliexpress.com/pcb+kit">https://aliexpress.com/pcb
 <img src="Images/CocktailCube.jpg" width="650">
 <img src="Images/WINEBar.jpg" width="650">
 
-Releases:
+Releases (Deprecated. From previous project):
 * V1.0 - Features:
   - Initial Release
 * V1.1 - Features:
@@ -28,6 +28,11 @@ Releases:
 * V1.2 - Features:
   - Wifi is now available! You can control the CocktailCube via access point. I will show a homepage under "\[mixername\].local". Additionally, you now can use the SPIFFS Uploader to upload the image and webpage files.
   <img src="Images/CocktailCube_PageSmall.jpg" width="450">
+  
+Releases (Inital CocktailCube Release):
+* V1.3 - Features:
+  - The configuration now comes from a JSON configuration file, which prevents you from having to rebuild and upload the firmware every time you want to change the configuration. The Winebar was integrated as a variant in the same firmware.
+  <img src="Images/CocktailCube_ConfigFile.jpg" width="450">
 
 ___
 
@@ -39,7 +44,7 @@ Link: <a href="https://youtu.be/noAwpnZ6lFE">https://youtu.be/noAwpnZ6lFE</a>
 
 ___
 
-CocktailCube Build Guide (Deprecated):
+CocktailCube Build Guide (Deprecated. From previous project, just for reference):
 
 <a href="https://youtu.be/Se7SYwGe9iE"><img src="Images/YoutubeVideo.jpg" width="650"></a>
 
