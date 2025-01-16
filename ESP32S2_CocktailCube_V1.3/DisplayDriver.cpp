@@ -31,7 +31,7 @@ DisplayDriver::DisplayDriver()
 //===============================================================
 // Initializes the display driver
 //===============================================================
-void DisplayDriver::Begin(Adafruit_ST7789* tft, bool spiffsAvailable)
+void DisplayDriver::Begin(Adafruit_ST7789* tft)
 {
   // Log startup info
   ESP_LOGI(TAG, "Begin initializing display driver");
@@ -45,40 +45,73 @@ void DisplayDriver::Begin(Adafruit_ST7789* tft, bool spiffsAvailable)
   _tft->setRotation(3);
   _tft->setTextWrap(false);
   _tft->setFont(&FreeSans9pt7b);
-  _tft->fillScreen(TFT_COLOR_BACKGROUND);
+  _tft->fillScreen(ST77XX_BLACK);
 
   int16_t x = TFT_WIDTH / 2;
   int16_t y = TFT_HEIGHT / 2;
 
   // Show starting message
-  _tft->setTextColor(TFT_COLOR_FOREGROUND);
+  _tft->setTextColor(ST77XX_WHITE);
   DrawCenteredString("Booting...", x, y, false, 0);
 
-  // Create image objects
-  _imageBottle = new SPIFFSImage();
-  _imageGlass = new SPIFFSImage();
-  _imageLogo = new SPIFFSImage();
-
-  // Load startup images to RAM
-  if (spiffsAvailable)
-  {
-    // Set images available
-    _imagesAvailable = (reader.LoadBMP(startupImageBottle.c_str(), _imageBottle) == IMAGE_SUCCESS &&
-      reader.LoadBMP(startupImageGlass.c_str(), _imageGlass) == IMAGE_SUCCESS &&
-      reader.LoadBMP(startupImageLogo.c_str(), _imageLogo) == IMAGE_SUCCESS) ? IMAGE_SUCCESS : IMAGE_ERR_FILE_NOT_FOUND;
-      
-    ESP_LOGI(TAG, "SPIFFS images are %s", (_imagesAvailable ? "available" : "not available"));
-  }
-  else
-  {
-    // Debug information on display
-    DrawCenteredString("SPIFFS Failed", x, y + SHORTLINEOFFSET, false, 0);
-    ESP_LOGE(TAG, "Loading SPIFFS images failed");
-    delay(3000);
-  }
-  
   // Log startup info
   ESP_LOGI(TAG, "Finished initializing display driver");
+}
+
+//===============================================================
+// Loads the images from spiffs
+//===============================================================
+void DisplayDriver::LoadImages()
+{
+  // Log info
+  ESP_LOGI(TAG, "Begin loading images");
+
+  // Set images available
+  // Resets if a single image failes to load
+  _imagesAvailable = true;
+
+  // Load startup image to RAM: Logo
+  _imageLogo = new SPIFFSImage();
+  ImageReturnCode returnCode = reader.LoadBMP(config.imageLogo, _imageLogo);
+  ESP_LOGI(TAG, "Load image 'Logo': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
+  _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+
+  // Load startup image to RAM: Glass
+  _imageGlass = new SPIFFSImage();
+  returnCode = reader.LoadBMP(config.imageGlass, _imageGlass);
+  ESP_LOGI(TAG, "Load image 'Glass': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
+  _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+
+  // Load startup images to RAM: Bottle 1
+  _imageBottle1 = new SPIFFSImage();
+  returnCode = reader.LoadBMP(config.imageBottle1, _imageBottle1);
+  ESP_LOGI(TAG, "Load image 'Bottle 1': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
+  _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+
+  if (!config.isMixer)
+  {
+    // Load startup images to RAM: Bottle 2
+    _imageBottle2 = new SPIFFSImage();
+    returnCode = reader.LoadBMP(config.imageBottle2, _imageBottle2);
+    ESP_LOGI(TAG, "Load image 'Bottle 2': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
+    _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+    
+    // Load startup images to RAM: Bottle 3
+    _imageBottle3 = new SPIFFSImage();
+    returnCode = reader.LoadBMP(config.imageBottle3, _imageBottle3);
+    ESP_LOGI(TAG, "Load image 'Bottle 3': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
+    _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+    
+    // Load startup images to RAM: Bottle 4
+    _imageBottle4 = new SPIFFSImage();
+    returnCode = reader.LoadBMP(config.imageBottle4, _imageBottle4);
+    ESP_LOGI(TAG, "Load image 'Bottle 4': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
+    _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+  }
+  ESP_LOGI(TAG, "SPIFFS images are %s", (_imagesAvailable ? "available" : "NOT available"));
+
+  // Log info
+  ESP_LOGI(TAG, "Finished loading images");
 }
 
 //===============================================================
@@ -134,26 +167,63 @@ void DisplayDriver::ShowIntroPage()
   ESP_LOGI(TAG, "Show intro page");
 
   // Draw intro page background
-  _tft->fillRect(0, 0,                TFT_WIDTH, TFT_HEIGHT * 0.8, TFT_COLOR_STARTPAGE_BACKGROUND);
-  _tft->fillRect(0, TFT_HEIGHT * 0.8, TFT_WIDTH, TFT_HEIGHT * 0.2, TFT_COLOR_STARTPAGE_FOREGROUND);
+  _tft->fillRect(0, 0,                TFT_WIDTH, TFT_HEIGHT * 0.8, config.tftColorStartPageBackground);
+  _tft->fillRect(0, TFT_HEIGHT * 0.8, TFT_WIDTH, TFT_HEIGHT * 0.2, config.tftColorStartPageForeground);
 
-  if (_imagesAvailable == IMAGE_SUCCESS)
+  if (_imagesAvailable)
   {
-    // Draw intro images
-    _imageBottle->Draw(TFT_BOTTLE_POS_X, TFT_BOTTLE_POS_Y, _tft, TFT_TRANSPARENCY_COLOR);
-    _imageGlass->Draw(TFT_GLASS_POS_X,   TFT_GLASS_POS_Y,  _tft, TFT_TRANSPARENCY_COLOR);
-    _imageLogo->Draw(TFT_LOGO_POS_X,     TFT_LOGO_POS_Y,   _tft, TFT_TRANSPARENCY_COLOR);
+    // Draw intro images (Attention: Order is decisive!)
+    _imageBottle1->Draw(config.tftBottlePosX, config.tftBottlePosY, _tft, config.tftTransparencyColor);
+    _imageGlass->Draw(config.tftGlassPosX,    config.tftGlassPosY,  _tft, config.tftTransparencyColor);
+    _imageLogo->Draw(config.tftLogoPosX,      config.tftLogoPosY,   _tft, config.tftTransparencyColor);
 
     // Free memory
-    delete _imageBottle;
-    delete _imageGlass;
-    //delete _imageLogo; // Do NOT delete logo image for usage with screen saver!
+    //if (_imageLogo) {  _imageLogo->Deallocate(); _imageLogo = NULL; } // Do NOT delete logo image for usage with screen saver!
+    if (_imageGlass)
+    {
+      _imageGlass->Deallocate();
+      _imageGlass = NULL;
+      ESP_LOGI(TAG, "Image 'Glass' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+    }
+
+    // Do NOT delete bottle images for usage for bar display !
+    if (config.isMixer)
+    {
+      if (_imageBottle1)
+      {
+        _imageBottle1->Deallocate();
+        _imageBottle1 = NULL;
+        ESP_LOGI(TAG, "Image 'Bottle 1' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+      } 
+      if (_imageBottle2)
+      {
+        _imageBottle2->Deallocate();
+        _imageBottle2 = NULL;
+        ESP_LOGI(TAG, "Image 'Bottle 2' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+      }
+      if (_imageBottle3)
+      {
+        _imageBottle3->Deallocate();
+        _imageBottle3 = NULL;
+        ESP_LOGI(TAG, "Image 'Bottle 3' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+      }
+      if (_imageBottle4)
+      {
+        _imageBottle4->Deallocate();
+        _imageBottle4 = NULL;
+        ESP_LOGI(TAG, "Image 'Bottle 4' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+      }
+    }
   }
   else
   {
     // Draw info box (fallback)
-    DrawInfoBox("- Startpage -", "NO SPIFFS Files!");
+    DrawInfoBox("- Startpage -", "No SPIFFS Files!");
   }
+
+  ESP_LOGI(TAG, "After intro page (images free-ed):");
+  ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
+  ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
 }
 
 //===============================================================
@@ -168,14 +238,14 @@ void DisplayDriver::ShowHelpPage()
   int16_t y = HEADEROFFSET_Y + 20;
 
   // Clear screen
-  _tft->fillScreen(TFT_COLOR_BACKGROUND);
+  _tft->fillScreen(config.tftColorBackground);
   
   // Draw header information
   DrawHeader("Instructions", false);
 
   // Set text settings
   _tft->setTextSize(1);
-  _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+  _tft->setTextColor(config.tftColorTextBody);
 
   // Draw help text
   _tft->setCursor(x, y);
@@ -184,13 +254,13 @@ void DisplayDriver::ShowHelpPage()
   _tft->print(" -> Change Setting");
   _tft->setCursor(x, y += SHORTLINEOFFSET);
   _tft->print("    ~ ");
-  _tft->print(LIQUID1_NAME);
+  _tft->print(config.liquid1Name);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
   _tft->print("    ~ ");
-  _tft->print(LIQUID2_NAME);
+  _tft->print(config.liquid2Name);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
   _tft->print("    ~ ");
-  _tft->print(LIQUID3_NAME);
+  _tft->print(config.liquid3Name);
   
   _tft->setCursor(x, y += LONGLINEOFFSET);
   _tft->print("Rotate:");
@@ -212,7 +282,7 @@ void DisplayDriver::ShowMenuPage()
   ESP_LOGI(TAG, "Show menu page");
 
   // Clear screen
-  _tft->fillScreen(TFT_COLOR_BACKGROUND);
+  _tft->fillScreen(config.tftColorBackground);
   
   // Draw header information
   DrawHeader("Menu");
@@ -230,7 +300,7 @@ void DisplayDriver::ShowDashboardPage()
   ESP_LOGI(TAG, "Show dashboard page");
 
   // Clear screen
-  _tft->fillScreen(TFT_COLOR_BACKGROUND);
+  _tft->fillScreen(config.tftColorBackground);
   
   // Draw header information
   DrawHeader();
@@ -249,7 +319,7 @@ void DisplayDriver::ShowDashboardPage()
 
   // Draw enjoy message
   _tft->setTextSize(1);
-  _tft->setTextColor(TFT_COLOR_FOREGROUND);
+  _tft->setTextColor(config.tftColorForeground);
   DrawCenteredString("Enjoy it!", x0, y0, false, 0);
 }
 
@@ -262,7 +332,7 @@ void DisplayDriver::ShowCleaningPage()
   ESP_LOGI(TAG, "Show cleaning page");
 
   // Clear screen
-  _tft->fillScreen(TFT_COLOR_BACKGROUND);
+  _tft->fillScreen(config.tftColorBackground);
   
   // Draw header information
   DrawHeader("Cleaning Mode");
@@ -283,7 +353,7 @@ void DisplayDriver::ShowSettingsPage()
   int16_t y = HEADEROFFSET_Y + 25;
 
   // Clear screen
-  _tft->fillScreen(TFT_COLOR_BACKGROUND);
+  _tft->fillScreen(config.tftColorBackground);
   
   // Draw header information
   DrawHeader("Settings");
@@ -294,7 +364,7 @@ void DisplayDriver::ShowSettingsPage()
 
   // Fill in settings text
   _tft->setTextSize(1);
-  _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+  _tft->setTextColor(config.tftColorTextBody);
 
   _tft->setCursor(x, y);
   _tft->print("App Version: ");
@@ -306,27 +376,27 @@ void DisplayDriver::ShowSettingsPage()
   _tft->print("Volume of liquid filled:");
   
   // Draw liquid 1 flow meter value
-  _tft->setTextColor(TFT_COLOR_LIQUID_1);
+  _tft->setTextColor(config.tftColorLiquid1);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
-  _tft->print(LIQUID1_NAME);
+  _tft->print(config.liquid1Name);
   _tft->print(":");
   _tft->setCursor(x + 120, y);
   _tft->print(FormatValue(valueLiquid1, 4, 2));
   _tft->print(" L");
   
   // Draw liquid 2 flow meter value
-  _tft->setTextColor(TFT_COLOR_LIQUID_2);
+  _tft->setTextColor(config.tftColorLiquid2);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
-  _tft->print(LIQUID2_NAME);
+  _tft->print(config.liquid2Name);
   _tft->print(":");
   _tft->setCursor(x + 120, y);
   _tft->print(FormatValue(valueLiquid2, 4, 2));
   _tft->print(" L");  
   
   // Draw liquid 3 flow meter value
-  _tft->setTextColor(TFT_COLOR_LIQUID_3);
+  _tft->setTextColor(config.tftColorLiquid3);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
-  _tft->print(LIQUID3_NAME);
+  _tft->print(config.liquid3Name);
   _tft->print(":");
   _tft->setCursor(x + 120, y);
   _tft->print(FormatValue(valueLiquid3, 4, 2));
@@ -336,14 +406,15 @@ void DisplayDriver::ShowSettingsPage()
   y = TFT_HEIGHT - 20;
 
   // Draw copyright icon
-  _tft->drawXBitmap(x, y, icon_copyright, 20, 20, TFT_COLOR_TEXT_BODY);
+  _tft->drawXBitmap(x, y, icon_copyright, 20, 20, config.tftColorTextBody);
   
   // Draw copyright text
   _tft->setCursor(x + 25, y + 15);
-  _tft->setTextColor(TFT_COLOR_TEXT_BODY);
-  _tft->print("2024 F.Stablein");
-  _tft->drawRect(x + 105, y + 2, 2, 2, TFT_COLOR_TEXT_BODY);  // Stablein with two dots -> Stäblein
-  _tft->drawRect(x + 109, y + 2, 2, 2, TFT_COLOR_TEXT_BODY);  // Stablein with two dots -> Stäblein
+  _tft->setTextColor(config.tftColorTextBody);
+  _tft->print(APP_COPYRIGHT);
+  _tft->print(" F.Stablein");
+  _tft->drawRect(x + 105, y + 2, 2, 2, config.tftColorTextBody);  // Stablein with two dots -> Stäblein
+  _tft->drawRect(x + 109, y + 2, 2, 2, config.tftColorTextBody);  // Stablein with two dots -> Stäblein
 }
 
 //===============================================================
@@ -355,7 +426,7 @@ void DisplayDriver::ShowScreenSaverPage()
   ESP_LOGI(TAG, "Show screen saver page");
 
   // Clear screen
-  _tft->fillScreen(TFT_COLOR_BACKGROUND);
+  _tft->fillScreen(config.tftColorBackground);
 
   // Draw inital screen saver
   DrawScreenSaver();
@@ -366,7 +437,7 @@ void DisplayDriver::ShowScreenSaverPage()
 //===============================================================
 void DisplayDriver::DrawHeader()
 {
-  DrawHeader(String("-- ") + MIXER_NAME + " --");
+  DrawHeader(String("-- ") + config.mixerName + " --");
 }
 
 //===============================================================
@@ -379,7 +450,7 @@ void DisplayDriver::DrawHeader(const String &text, bool withIcons)
 
   // Draw header text
   _tft->setTextSize(1);
-  _tft->setTextColor(TFT_COLOR_TEXT_HEADER);
+  _tft->setTextColor(config.tftColorTextHeader);
   DrawCenteredString(text, x, y, false, 0);
 
   x = HEADER_MARGIN;
@@ -388,7 +459,7 @@ void DisplayDriver::DrawHeader(const String &text, bool withIcons)
   int16_t y1 = HEADEROFFSET_Y;
 
   // Draw header line
-  _tft->drawLine(x, y, x1, y1, TFT_COLOR_FOREGROUND);
+  _tft->drawLine(x, y, x1, y1, config.tftColorForeground);
 
   if (withIcons)
   {
@@ -421,24 +492,24 @@ void DisplayDriver::DrawWifiIcons(bool isfullUpdate)
   _lastDraw_ConnectedClients = connectedClients;
 
   // Clear wifi icon
-  _tft->drawXBitmap(x, y, icon_wifi, width, height, TFT_COLOR_BACKGROUND);
-  _tft->drawXBitmap(x, y, icon_noWifi, width, height, TFT_COLOR_BACKGROUND);
+  _tft->drawXBitmap(x, y, icon_wifi, width, height, config.tftColorBackground);
+  _tft->drawXBitmap(x, y, icon_noWifi, width, height, config.tftColorBackground);
 
   // Draw new wifi icon
-  _tft->drawXBitmap(x, y, wifiMode == WIFI_MODE_AP ? icon_wifi : icon_noWifi, width, height, TFT_COLOR_FOREGROUND);
+  _tft->drawXBitmap(x, y, wifiMode == WIFI_MODE_AP ? icon_wifi : icon_noWifi, width, height, config.tftColorForeground);
 
   x = 5;
   y += 2;
 
   // Clear connected clients
-  _tft->fillRect(x, y, width, height, TFT_COLOR_BACKGROUND);
+  _tft->fillRect(x, y, width, height, config.tftColorBackground);
 
   if (wifiMode == WIFI_MODE_AP)
   {
     // Draw new connected clients
-    _tft->drawXBitmap(x, y, icon_device, width, height, TFT_COLOR_FOREGROUND);
+    _tft->drawXBitmap(x, y, icon_device, width, height, config.tftColorForeground);
     _tft->setCursor(x + 7, y + 17);
-    _tft->setTextColor(TFT_COLOR_FOREGROUND);
+    _tft->setTextColor(config.tftColorForeground);
     _tft->print(connectedClients);
   }
 }
@@ -455,8 +526,8 @@ void DisplayDriver::DrawInfoBox(const String &line1, const String &line2)
   int16_t height = TFT_HEIGHT - HEADEROFFSET_Y - 2 * INFOBOX_MARGIN_VERT;
 
   // Draw rectangle with colored border
-  _tft->fillRoundRect(x,     y,      width,     height,     INFOBOX_CORNERRADIUS, TFT_COLOR_INFOBOX_BORDER);
-  _tft->fillRoundRect(x + 2, y + 2,  width - 4, height - 4, INFOBOX_CORNERRADIUS, TFT_COLOR_INFOBOX_BACKGROUND);
+  _tft->fillRoundRect(x,     y,      width,     height,     INFOBOX_CORNERRADIUS, config.tftColorInfoBoxBorder);
+  _tft->fillRoundRect(x + 2, y + 2,  width - 4, height - 4, INFOBOX_CORNERRADIUS, config.tftColorInfoBoxBackground);
   
   // Move to the middle of the box
   x += width / 2;
@@ -464,7 +535,7 @@ void DisplayDriver::DrawInfoBox(const String &line1, const String &line2)
 
   // Fill in info text
   _tft->setTextSize(1);
-  _tft->setTextColor(TFT_COLOR_INFOBOX_FOREGROUND);
+  _tft->setTextColor(config.tftColorInfoBoxForeground);
   DrawCenteredString(line1, x, y - (SHORTLINEOFFSET / 2), false, 0);
   DrawCenteredString(line2, x, y + (SHORTLINEOFFSET / 2), false, 0);
 }
@@ -489,17 +560,17 @@ void DisplayDriver::DrawMenu(bool isfullUpdate)
     height = 32;
 
     // Draw icons
-    _tft->drawXBitmap(x, y,                    icon_dashboard, width, height, TFT_COLOR_FOREGROUND);
-    _tft->drawXBitmap(x, y += MENU_LINEOFFSET, icon_cleaning,  width, height, TFT_COLOR_FOREGROUND);
-    _tft->drawXBitmap(x, y += MENU_LINEOFFSET, icon_reset,     width, height, TFT_COLOR_FOREGROUND);
-    _tft->drawXBitmap(x, y += MENU_LINEOFFSET, icon_settings,  width, height, TFT_COLOR_FOREGROUND);
+    _tft->drawXBitmap(x, y,                    icon_dashboard, width, height, config.tftColorForeground);
+    _tft->drawXBitmap(x, y += MENU_LINEOFFSET, icon_cleaning,  width, height, config.tftColorForeground);
+    _tft->drawXBitmap(x, y += MENU_LINEOFFSET, icon_reset,     width, height, config.tftColorForeground);
+    _tft->drawXBitmap(x, y += MENU_LINEOFFSET, icon_settings,  width, height, config.tftColorForeground);
 
     x = MENU_MARGIN_HORI + MENU_MARGIN_ICON + MENU_MARGIN_TEXT;
     y = HEADEROFFSET_Y + marginToHeader;
 
     // Draw menu text
     _tft->setTextSize(1);
-    _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+    _tft->setTextColor(config.tftColorTextBody);
     _tft->setCursor(x, y);
     _tft->print("Dashboard");
     _tft->setCursor(x, y += MENU_LINEOFFSET);
@@ -518,12 +589,12 @@ void DisplayDriver::DrawMenu(bool isfullUpdate)
     height = MENU_SELECTOR_HEIGHT;
 
     // Reset old menu selection on display
-    _tft->drawRoundRect(x, y, width, height, MENU_SELECTOR_CORNERRADIUS, TFT_COLOR_BACKGROUND);
+    _tft->drawRoundRect(x, y, width, height, MENU_SELECTOR_CORNERRADIUS, config.tftColorBackground);
 
     y = HEADEROFFSET_Y + marginToHeader + ((uint16_t)_menuState - 1) * MENU_LINEOFFSET - 6 - MENU_SELECTOR_HEIGHT / 2;
 
     // Draw new menu selection on display
-    _tft->drawRoundRect(x, y, width, height, MENU_SELECTOR_CORNERRADIUS, TFT_COLOR_MENU_SELECTOR);
+    _tft->drawRoundRect(x, y, width, height, MENU_SELECTOR_CORNERRADIUS, config.tftColorMenuSelector);
 
     // Save last state
     _lastDraw_MenuState = _menuState;
@@ -539,7 +610,7 @@ void DisplayDriver::DrawCheckBoxes()
   int16_t y = TFT_HEIGHT / 3;
   
   // Print selection text
-  _tft->setTextColor(TFT_COLOR_FOREGROUND);
+  _tft->setTextColor(config.tftColorForeground);
   DrawCenteredString("Select pumps for cleaning:", x, y, false, 0);
 
   int16_t boxWidth = 30;
@@ -550,9 +621,9 @@ void DisplayDriver::DrawCheckBoxes()
   y = HEADEROFFSET_Y + TFT_HEIGHT / 3;
   
   // Draw checkboxes
-  _tft->drawRect(x,                y, boxWidth, boxHeight, TFT_COLOR_FOREGROUND);
-  _tft->drawRect(x += boxDistance, y, boxWidth, boxHeight, TFT_COLOR_FOREGROUND);
-  _tft->drawRect(x += boxDistance, y, boxWidth, boxHeight, TFT_COLOR_FOREGROUND);
+  _tft->drawRect(x,                y, boxWidth, boxHeight, config.tftColorForeground);
+  _tft->drawRect(x += boxDistance, y, boxWidth, boxHeight, config.tftColorForeground);
+  _tft->drawRect(x += boxDistance, y, boxWidth, boxHeight, config.tftColorForeground);
 
   // Reduce rectangle for infill
   x = TFT_WIDTH / 7 + 4;
@@ -561,21 +632,21 @@ void DisplayDriver::DrawCheckBoxes()
   boxHeight -= 8;
   
   // Draw activated checkboxes
-  _tft->fillRect(x,                y, boxWidth, boxHeight, _cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid1 ? TFT_COLOR_STARTPAGE : TFT_COLOR_BACKGROUND);
-  _tft->fillRect(x += boxDistance, y, boxWidth, boxHeight, _cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid2 ? TFT_COLOR_STARTPAGE : TFT_COLOR_BACKGROUND);
-  _tft->fillRect(x += boxDistance, y, boxWidth, boxHeight, _cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid3 ? TFT_COLOR_STARTPAGE : TFT_COLOR_BACKGROUND);
+  _tft->fillRect(x,                y, boxWidth, boxHeight, _cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid1 ? config.tftColorStartPage : config.tftColorBackground);
+  _tft->fillRect(x += boxDistance, y, boxWidth, boxHeight, _cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid2 ? config.tftColorStartPage : config.tftColorBackground);
+  _tft->fillRect(x += boxDistance, y, boxWidth, boxHeight, _cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid3 ? config.tftColorStartPage : config.tftColorBackground);
 
   // Move under the boxes for liquid names
   x = TFT_WIDTH / 7 + boxWidth / 2;
   y += 2 * boxHeight;
 
   // Draw liquid names
-  _tft->setTextColor(TFT_COLOR_LIQUID_1);
-  DrawCenteredString(LIQUID1_NAME, x,                y, false, 0);
-  _tft->setTextColor(TFT_COLOR_LIQUID_2);
-  DrawCenteredString(LIQUID2_NAME, x += boxDistance, y, false, 0);
-  _tft->setTextColor(TFT_COLOR_LIQUID_3);
-  DrawCenteredString(LIQUID3_NAME, x += boxDistance, y, false, 0);
+  _tft->setTextColor(config.tftColorLiquid1);
+  DrawCenteredString(config.liquid1Name, x,                y, false, 0);
+  _tft->setTextColor(config.tftColorLiquid2);
+  DrawCenteredString(config.liquid2Name, x += boxDistance, y, false, 0);
+  _tft->setTextColor(config.tftColorLiquid3);
+  DrawCenteredString(config.liquid3Name, x += boxDistance, y, false, 0);
 }
 
 //===============================================================
@@ -589,7 +660,7 @@ void DisplayDriver::DrawLegend()
   int16_t height = HEIGHT_LEGEND;
 
   // Draw legend box
-  _tft->drawRect(x, y, width, height, TFT_COLOR_FOREGROUND);
+  _tft->drawRect(x, y, width, height, config.tftColorForeground);
 
   int16_t marginTop = 10;
   int16_t marginBetween = 21;
@@ -603,9 +674,9 @@ void DisplayDriver::DrawLegend()
   height = boxHeight;
 
   // Draw liquid color boxes
-  _tft->fillRect(x, y,                    width, height, TFT_COLOR_LIQUID_1);
-  _tft->fillRect(x, y += LOONGLINEOFFSET, width, height, TFT_COLOR_LIQUID_2);
-  _tft->fillRect(x, y += LOONGLINEOFFSET, width, height, TFT_COLOR_LIQUID_3);
+  _tft->fillRect(x, y,                    width, height, config.tftColorLiquid1);
+  _tft->fillRect(x, y += LOONGLINEOFFSET, width, height, config.tftColorLiquid2);
+  _tft->fillRect(x, y += LOONGLINEOFFSET, width, height, config.tftColorLiquid3);
 
   // Move to inner text
   x = X_LEGEND + WIDTH_LEGEND / 2;
@@ -613,10 +684,10 @@ void DisplayDriver::DrawLegend()
 
   // Draw liquid text
   _tft->setTextSize(1);
-  _tft->setTextColor(TFT_COLOR_TEXT_BODY);  
-  DrawCenteredString(LIQUID1_NAME, x, y,                    true, _dashboardLiquid == eLiquid1 ? TFT_COLOR_FOREGROUND : TFT_COLOR_BACKGROUND);
-  DrawCenteredString(LIQUID2_NAME, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid2 ? TFT_COLOR_FOREGROUND : TFT_COLOR_BACKGROUND);
-  DrawCenteredString(LIQUID3_NAME, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid3 ? TFT_COLOR_FOREGROUND : TFT_COLOR_BACKGROUND);
+  _tft->setTextColor(config.tftColorTextBody);  
+  DrawCenteredString(config.liquid1Name, x, y,                    true, _dashboardLiquid == eLiquid1 ? config.tftColorForeground : config.tftColorBackground);
+  DrawCenteredString(config.liquid2Name, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid2 ? config.tftColorForeground : config.tftColorBackground);
+  DrawCenteredString(config.liquid3Name, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid3 ? config.tftColorForeground : config.tftColorBackground);
 }
 
 //===============================================================
@@ -637,7 +708,7 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
     // Draw base string "Mix [100%, 100%, 100% ]"
   if (isfullUpdate)
   {
-    _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+    _tft->setTextColor(config.tftColorTextBody);
     _tft->setCursor(x, y);
     _tft->print("Mix [");
   }
@@ -646,12 +717,12 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
   if (_lastDraw_Liquid1String != liquid1_PercentageString || isfullUpdate)
   {
     // Reset old string on display
-    _tft->setTextColor(TFT_COLOR_BACKGROUND);
+    _tft->setTextColor(config.tftColorBackground);
     _tft->setCursor(x, y);
     _tft->print(_lastDraw_Liquid1String);
     
     // Draw new string on display
-    _tft->setTextColor(TFT_COLOR_LIQUID_1);
+    _tft->setTextColor(config.tftColorLiquid1);
     _tft->setCursor(x, y);
     _tft->print(liquid1_PercentageString);
     
@@ -662,7 +733,7 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
   x += 40;
   if (isfullUpdate)
   {
-    _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+    _tft->setTextColor(config.tftColorTextBody);
     _tft->setCursor(x, y);
     _tft->print(",");
   }
@@ -671,12 +742,12 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
   if (_lastDraw_Liquid2String != liquid2_PercentageString || isfullUpdate)
   {
     // Reset old string on display
-    _tft->setTextColor(TFT_COLOR_BACKGROUND);
+    _tft->setTextColor(config.tftColorBackground);
     _tft->setCursor(x, y);
     _tft->print(_lastDraw_Liquid2String);
     
     // Draw new string on display
-    _tft->setTextColor(TFT_COLOR_LIQUID_2);
+    _tft->setTextColor(config.tftColorLiquid2);
     _tft->setCursor(x, y);
     _tft->print(liquid2_PercentageString);
 
@@ -687,7 +758,7 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
   x += 40;
   if (isfullUpdate)
   {
-    _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+    _tft->setTextColor(config.tftColorTextBody);
     _tft->setCursor(x, y);
     _tft->print(",");
   }
@@ -696,12 +767,12 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
   if (_lastDraw_Liquid3String != liquid3_PercentageString || isfullUpdate)
   {
     // Reset old string on display
-    _tft->setTextColor(TFT_COLOR_BACKGROUND);
+    _tft->setTextColor(config.tftColorBackground);
     _tft->setCursor(x, y);
     _tft->print(_lastDraw_Liquid3String);
     
     // Draw new string on display
-    _tft->setTextColor(TFT_COLOR_LIQUID_3);
+    _tft->setTextColor(config.tftColorLiquid3);
     _tft->setCursor(x, y);
     _tft->print(liquid3_PercentageString);
 
@@ -712,7 +783,7 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
   x += 45;
   if (isfullUpdate)
   {
-    _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+    _tft->setTextColor(config.tftColorTextBody);
     _tft->setCursor(x, y);
     _tft->print("]");
   }
@@ -739,21 +810,21 @@ void DisplayDriver::DrawDoughnutChart3(bool clockwise, bool isfullUpdate)
     int16_t liquid3Distance_Degrees = GetDistanceDegrees(_liquid3Angle_Degrees, _liquid1Angle_Degrees);
   
     // Draw doughnut chart parts
-    FillArc(_liquid1Angle_Degrees, liquid1Distance_Degrees, TFT_COLOR_LIQUID_1);
-    FillArc(_liquid2Angle_Degrees, liquid2Distance_Degrees, TFT_COLOR_LIQUID_2);
-    FillArc(_liquid3Angle_Degrees, liquid3Distance_Degrees, TFT_COLOR_LIQUID_3);
+    FillArc(_liquid1Angle_Degrees, liquid1Distance_Degrees, config.tftColorLiquid1);
+    FillArc(_liquid2Angle_Degrees, liquid2Distance_Degrees, config.tftColorLiquid2);
+    FillArc(_liquid3Angle_Degrees, liquid3Distance_Degrees, config.tftColorLiquid3);
   }
   else
   {
-    DrawPartial(_liquid1Angle_Degrees, _lastDraw_liquid1Angle_Degrees, TFT_COLOR_LIQUID_1, TFT_COLOR_LIQUID_3, clockwise);
-    DrawPartial(_liquid2Angle_Degrees, _lastDraw_liquid2Angle_Degrees, TFT_COLOR_LIQUID_2, TFT_COLOR_LIQUID_1, clockwise);
-    DrawPartial(_liquid3Angle_Degrees, _lastDraw_liquid3Angle_Degrees, TFT_COLOR_LIQUID_3, TFT_COLOR_LIQUID_2, clockwise);
+    DrawPartial(_liquid1Angle_Degrees, _lastDraw_liquid1Angle_Degrees, config.tftColorLiquid1, config.tftColorLiquid3, clockwise);
+    DrawPartial(_liquid2Angle_Degrees, _lastDraw_liquid2Angle_Degrees, config.tftColorLiquid2, config.tftColorLiquid1, clockwise);
+    DrawPartial(_liquid3Angle_Degrees, _lastDraw_liquid3Angle_Degrees, config.tftColorLiquid3, config.tftColorLiquid2, clockwise);
   }
 
   // Draw black spacer and selected white
-  FillArc(Move360(_liquid1Angle_Degrees, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, _dashboardLiquid == eLiquid1 ? TFT_COLOR_FOREGROUND : TFT_COLOR_BACKGROUND);
-  FillArc(Move360(_liquid2Angle_Degrees, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, _dashboardLiquid == eLiquid2 ? TFT_COLOR_FOREGROUND : TFT_COLOR_BACKGROUND);
-  FillArc(Move360(_liquid3Angle_Degrees, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, _dashboardLiquid == eLiquid3 ? TFT_COLOR_FOREGROUND : TFT_COLOR_BACKGROUND);
+  FillArc(Move360(_liquid1Angle_Degrees, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, _dashboardLiquid == eLiquid1 ? config.tftColorForeground : config.tftColorBackground);
+  FillArc(Move360(_liquid2Angle_Degrees, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, _dashboardLiquid == eLiquid2 ? config.tftColorForeground : config.tftColorBackground);
+  FillArc(Move360(_liquid3Angle_Degrees, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, _dashboardLiquid == eLiquid3 ? config.tftColorForeground : config.tftColorBackground);
   
   // Set last drawn angles
   _lastDraw_liquid1Angle_Degrees = _liquid1Angle_Degrees;
@@ -828,7 +899,7 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
 
   if (isfullUpdate)
   {
-    _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+    _tft->setTextColor(config.tftColorTextBody);
     _tft->setCursor(x, y);
     _tft->print("PWM CycleTime: ");
   }
@@ -839,13 +910,13 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
   {
     // Clear old value
     _tft->setCursor(x + 145, y);
-    _tft->setTextColor(TFT_COLOR_BACKGROUND);
+    _tft->setTextColor(config.tftColorBackground);
     _tft->print(_lastDraw_cycleTimespan_ms);
     _tft->print(" ms");
 
     // Set new value
     _tft->setCursor(x + 145, y);
-    _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+    _tft->setTextColor(config.tftColorTextBody);
     _tft->print(cycleTimespan_ms);
     _tft->print(" ms");
 
@@ -860,7 +931,7 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
 
   if (isfullUpdate)
   {
-    _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+    _tft->setTextColor(config.tftColorTextBody);
     _tft->setCursor(x, y);
     _tft->print("WIFI Mode: ");
   }
@@ -869,12 +940,12 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
   {
     // Clear old value
     _tft->setCursor(x + 98, y);
-    _tft->setTextColor(TFT_COLOR_BACKGROUND);
+    _tft->setTextColor(config.tftColorBackground);
     _tft->print(_lastDraw_wifiMode == WIFI_MODE_AP ? "AP" : "OFF");
 
     // Set new value
     _tft->setCursor(x + 98, y);
-    _tft->setTextColor(TFT_COLOR_TEXT_BODY);
+    _tft->setTextColor(config.tftColorTextBody);
     _tft->print(wifiMode == WIFI_MODE_AP ? "AP" : "OFF");
     
     _lastDraw_wifiMode = wifiMode;
@@ -887,18 +958,17 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
 //===============================================================
 void DisplayDriver::DrawScreenSaver()
 {
-  bool hasLogo = _imagesAvailable == IMAGE_SUCCESS;
-  int16_t logoWidth = hasLogo ? _imageLogo->Width() : 0;
-  int16_t logoHeight = hasLogo ? _imageLogo->Height() : 0;
+  int16_t logoWidth = _imagesAvailable ? _imageLogo->Width() : 0;
+  int16_t logoHeight = _imagesAvailable ? _imageLogo->Height() : 0;
   
   // Move logo indexes
   int16_t logo_x = _lastLogo_x + _xDir;
   int16_t logo_y = _lastLogo_y + _yDir;
 
   // Move logo if image is available
-  if (hasLogo)
+  if (_imagesAvailable)
   {
-    _imageLogo->Move(_lastLogo_x, _lastLogo_y, logo_x, logo_y, _tft, TFT_COLOR_BACKGROUND, TFT_TRANSPARENCY_COLOR);
+    _imageLogo->Move(_lastLogo_x, _lastLogo_y, logo_x, logo_y, _tft, config.tftColorBackground, config.tftTransparencyColor);
   }
 
   // Impact collision with the left or right edge
@@ -920,12 +990,12 @@ void DisplayDriver::DrawScreenSaver()
     if (_stars[index].Size >= _stars[index].MaxSize)
     {
       // Clear old star only outside of the non-transparent part of the logo
-      if (!hasLogo ||
+      if (!_imagesAvailable ||
         !(_stars[index].X > logo_x && _stars[index].X < logo_x + logoWidth &&
         _stars[index].Y > logo_y && _stars[index].Y < logo_y + logoHeight &&
-        _imageLogo->GetPixel(_stars[index].X - logo_x, _stars[index].Y - logo_y) != TFT_TRANSPARENCY_COLOR))
+        _imageLogo->GetPixel(_stars[index].X - logo_x, _stars[index].Y - logo_y) != config.tftTransparencyColor))
       {
-        DrawStar(_stars[index].X, _stars[index].Y, _stars[index].FullStars, TFT_COLOR_BACKGROUND, _stars[index].Size);
+        DrawStar(_stars[index].X, _stars[index].Y, _stars[index].FullStars, config.tftColorBackground, _stars[index].Size);
       }
 
       _stars[index].X = random(0, TFT_WIDTH);
@@ -936,12 +1006,12 @@ void DisplayDriver::DrawScreenSaver()
     }
 
     // Draw new star only outside of the non-transparent part of the logo
-    if (!hasLogo || 
+    if (!_imagesAvailable || 
       !(_stars[index].X > logo_x && _stars[index].X < logo_x + logoWidth &&
       _stars[index].Y > logo_y && _stars[index].Y < logo_y + logoHeight &&
-      _imageLogo->GetPixel(_stars[index].X - logo_x, _stars[index].Y - logo_y) != TFT_TRANSPARENCY_COLOR))
+      _imageLogo->GetPixel(_stars[index].X - logo_x, _stars[index].Y - logo_y) != config.tftTransparencyColor))
     {
-      DrawStar(_stars[index].X, _stars[index].Y, _stars[index].FullStars, TFT_COLOR_FOREGROUND, _stars[index].Size);
+      DrawStar(_stars[index].X, _stars[index].Y, _stars[index].FullStars, config.tftColorForeground, _stars[index].Size);
     }
 
     // Increment star size

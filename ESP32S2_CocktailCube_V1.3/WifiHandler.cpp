@@ -46,6 +46,10 @@ void WifiHandler::Begin()
   // Log startup info
   ESP_LOGI(TAG, "Begin initializing wifi handler");
 
+  // Set SSID and password
+  _ssid = config.mixerName.c_str();
+  _password = config.mixerPassword.c_str();
+
   // Load wifi settings
   Load();
 
@@ -320,7 +324,7 @@ bool WifiHandler::StartWebServer()
 
   // Set up mDNS responder to mixer name, e.g. http://mixer.local
   ESP_LOGI(TAG, "Set up mDNS responde");
-  String mdnsName = MIXER_NAME;
+  String mdnsName = config.mixerName;
   mdnsName.toLowerCase();
   mdnsName.trim();
   MDNS.begin(mdnsName);
@@ -371,7 +375,7 @@ bool WifiHandler::StartWebServer()
   ESP_LOGI(TAG, "Add not found handler");
   _webserver->onNotFound([](AsyncWebServerRequest *request)
   {
-    String mixerName = MIXER_NAME;
+    String mixerName = config.mixerName;
     mixerName.toLowerCase();
     mixerName.trim();
     request->send(404, "text/plain", "Sorry, page not found! Go to 'http://" + mixerName + ".local' or 'http://192.168.1.1/'");
@@ -417,9 +421,9 @@ void WifiHandler::UpdateSettingsToClient(AsyncWebSocketClient* client)
   uint32_t cycleTimepan_ms = Pumps.GetCycleTimespan();
 
   client->printf("CLIENT_ID:%s", String(client->id()).c_str());
-  client->printf("MIXER_NAME:%s", MIXER_NAME);
-  client->printf("LIQUID_NAMES:%s,%s,%s", LIQUID1_NAME, LIQUID2_NAME, LIQUID3_NAME);
-  client->printf("LIQUID_COLORS:%s,%s,%s", String(WIFI_COLOR_LIQUID_1).c_str(), String(WIFI_COLOR_LIQUID_2).c_str(), String(WIFI_COLOR_LIQUID_3).c_str());
+  client->printf("MIXER_NAME:%s", config.mixerName.c_str());
+  client->printf("LIQUID_NAMES:%s,%s,%s", config.liquid1Name.c_str(), config.liquid2Name.c_str(), config.liquid3Name.c_str());
+  client->printf("LIQUID_COLORS:%s,%s,%s", config.wifiColorLiquid1.c_str(), config.wifiColorLiquid2.c_str(), config.wifiColorLiquid3.c_str());
   client->printf("LIQUID_ANGLES:%s,%s,%s", String(angle1).c_str(), String(angle2).c_str(), String(angle3).c_str());
   client->printf("CYCLE_TIMESPAN:%s", String(cycleTimepan_ms).c_str());
 }

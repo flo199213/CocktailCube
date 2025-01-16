@@ -760,9 +760,9 @@ void StateMachine::FctScreenSaver(MixerEvent event)
 void StateMachine::SetMixtureDefaults()
 { 
   // Set mixture to default
-  _liquid1Angle_Degrees = LIQUID1ANGLE_DEGREES;
-  _liquid2Angle_Degrees = LIQUID2ANGLE_DEGREES;
-  _liquid3Angle_Degrees = LIQUID3ANGLE_DEGREES;
+  _liquid1Angle_Degrees = config.liquid1AngleDegrees;
+  _liquid2Angle_Degrees = config.liquid2AngleDegrees;
+  _liquid3Angle_Degrees = config.liquid3AngleDegrees;
 }
 
 //===============================================================
@@ -874,9 +874,9 @@ String StateMachine::GetMixtureString()
   // Build string output
   String returnString;
 
-  returnString += String(LIQUID1_NAME) + ": " + String(_liquid1_Percentage) + "% (" + String(_liquid1Angle_Degrees) + "°), ";
-  returnString += String(LIQUID2_NAME) + ": " + String(_liquid2_Percentage) + "% (" + String(_liquid2Angle_Degrees) + "°), ";
-  returnString += String(LIQUID3_NAME) + ": " + String(_liquid3_Percentage) + "% (" + String(_liquid3Angle_Degrees) + "°), ";
+  returnString += String(config.liquid1Name) + ": " + String(_liquid1_Percentage) + "% (" + String(_liquid1Angle_Degrees) + "°), ";
+  returnString += String(config.liquid2Name) + ": " + String(_liquid2_Percentage) + "% (" + String(_liquid2Angle_Degrees) + "°), ";
+  returnString += String(config.liquid3Name) + ": " + String(_liquid3_Percentage) + "% (" + String(_liquid3Angle_Degrees) + "°), ";
   returnString += "Sum: " + String(sum_Percentage) + "%";
   
   if ((sum_Percentage - 100.0) > 0.1 || (sum_Percentage - 100.0) < -0.1)

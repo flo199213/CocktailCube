@@ -80,8 +80,8 @@ class WifiHandler
     wifi_mode_t _wifiMode = WIFI_MODE_NULL;
 
     // SSID and Password
-    const char* _ssid = MIXER_NAME;
-    const char* _password = MIXER_PASSWORD;
+    const char* _ssid = "";
+    const char* _password = "";
 
     // Web server variables
     AsyncWebServer* _webserver;

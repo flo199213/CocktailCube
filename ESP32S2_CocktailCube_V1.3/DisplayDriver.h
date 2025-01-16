@@ -185,7 +185,10 @@ class DisplayDriver
     DisplayDriver();
 
     // Initializes the display driver
-    void Begin(Adafruit_ST7789* tft, bool spiffsAvailable);
+    void Begin(Adafruit_ST7789* tft);
+
+    // Loads the images from spiffs
+    void LoadImages();
 
     // Sets the menu state
     void SetMenuState(MixerState state);
@@ -259,11 +262,14 @@ class DisplayDriver
     char _output[30];
 
     // Image pointer
-    SPIFFSImage* _imageBottle;
-    SPIFFSImage* _imageGlass;
     SPIFFSImage* _imageLogo;
+    SPIFFSImage* _imageGlass;
+    SPIFFSImage* _imageBottle1;
+    SPIFFSImage* _imageBottle2;
+    SPIFFSImage* _imageBottle3;
+    SPIFFSImage* _imageBottle4;
     SPIFFSImageReader reader;
-    ImageReturnCode _imagesAvailable = IMAGE_ERR_FILE_NOT_FOUND;
+    bool _imagesAvailable = false;
 
     // Current mixture settings
     MixerState _menuState = eDashboard;

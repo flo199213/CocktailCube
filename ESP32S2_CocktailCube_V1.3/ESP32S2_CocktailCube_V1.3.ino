@@ -95,11 +95,18 @@ static const char* TAG = "main";
 //===============================================================
 // Global variables
 //===============================================================
+// Global configuration
+Config config;
+
+// Non-volatile preferences from flash
 Preferences preferences;
+
+// Display
 Adafruit_ST7789* tft = NULL;
 
 // Timer variables for alive counter
-uint32_t aliveTimestamp = 0;
+uint32_t aliveTimestampLoop = 0;
+uint32_t aliveTimestampMain = 0;
 const uint32_t AliveTime_ms = 2000;
 
 // Timer variables for blink counter
@@ -108,7 +115,6 @@ const uint32_t BlinkTime_ms = 100;
 
 // Task handles
 TaskHandle_t mainTaskHandle = NULL;
-TaskHandle_t timerTaskHandle = NULL;
 
 //===============================================================
 // Interrupt on pumps enable changing state
@@ -174,15 +180,9 @@ void setup(void)
 #if defined(DEBUG_MIXER)
   delay(2000);
 #endif
-  ESP_LOGI(TAG, "Setup %s %s", MIXER_NAME, APP_VERSION);
-
-  // Initialize SPIFFS
-  ESP_LOGI(TAG, "Initialize SPIFFS");
-  SPIFFS.end(); // Close first for begin with 'formatOnFail'
-  bool spiffsAvailable = SPIFFS.begin(true);
-
-  // Initialize system helper
-  Systemhelper.Begin();
+  ESP_LOGI(TAG, "-- CocktailCube %s --", APP_VERSION);
+  ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
+  ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
 
   // Initialize SPI
   ESP_LOGI(TAG, "Initialize SPI");
@@ -192,8 +192,42 @@ void setup(void)
   // Initialize display
   ESP_LOGI(TAG, "Initialize display");
   tft = new Adafruit_ST7789(spi, PIN_TFT_CS, PIN_TFT_DC, PIN_TFT_RST);
-  Display.Begin(tft, spiffsAvailable);
+  Display.Begin(tft);
+  ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
+  ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
 
+  // Initialize SPIFFS
+  ESP_LOGI(TAG, "Initialize SPIFFS");
+  SPIFFS.end(); // Close first for begin with 'formatOnFail'
+  if (!SPIFFS.begin(true))
+  {
+    // Debug information on display
+    Display.DrawInfoBox("Error", "Open SPIFFS failed");
+    ESP_LOGE(TAG, "Loading SPIFFS images failed");
+    delay(3000);
+  }
+
+  // Initialize system helper
+  Systemhelper.Begin();
+
+  // Loading config file
+  ESP_LOGI(TAG, "Loading config file");
+  if (!LoadConfig("/config.txt"))
+  {
+    // Debug information on display
+    Display.DrawInfoBox("Error", "Load config failed");
+    ESP_LOGE(TAG, "Load config failed");
+    delay(3000);
+  }
+  ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
+  ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
+  
+  // Loading images from SPIFFS
+  ESP_LOGI(TAG, "Loading images from SPIFFS");
+  Display.LoadImages();
+  ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
+  ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
+  
   // Show intro page
   ESP_LOGI(TAG, "Show intro page");
   Display.ShowIntroPage();
@@ -268,10 +302,8 @@ void setup(void)
     // Check for button press user input
     if (EncoderButton.IsButtonPress())
     {
-      // Short beep sound
+      // Play short beep sound and proceed with setup
       tone(PIN_BUZZER, 500, 40);
-
-      // Proceed with setup
       break;
     }
 
@@ -295,7 +327,16 @@ void setup(void)
 
   // Start main task
   ESP_LOGI(TAG, "Start main task");
-  xTaskCreate(Main_Task, "Main_Task", 4096, NULL, 10, &mainTaskHandle);
+  BaseType_t xReturned = xTaskCreate(Main_Task, "Main_Task", 4096, NULL, 10, &mainTaskHandle);
+  if (xReturned != pdPASS)
+  {
+    // Draw info box with error text
+    Display.DrawInfoBox("Hardware Error", "Main task not running");
+    while(true)
+    {
+      delay(1);
+    }
+  }
 
   // Final output
   ESP_LOGI(TAG, "Setup Finished");
@@ -307,9 +348,9 @@ void setup(void)
 void loop()
 {
   // Show debug alive message
-  if ((millis() - aliveTimestamp) > AliveTime_ms)
+  if ((millis() - aliveTimestampLoop) > AliveTime_ms)
   {
-    aliveTimestamp = millis();
+    aliveTimestampLoop = millis();
     ESP_LOGI(TAG, "Loop Alive");
     
     // Print mixture information
@@ -357,6 +398,13 @@ void Main_Task(void *arg)
 {
   while(1)
   {
+    // Show debug alive message
+    if ((millis() - aliveTimestampMain) > AliveTime_ms)
+    {
+      aliveTimestampMain = millis();
+      ESP_LOGI(TAG, "Main Alive");
+    }
+
     // Run statemachine with main task event
     Statemachine.Execute(eMain);
 

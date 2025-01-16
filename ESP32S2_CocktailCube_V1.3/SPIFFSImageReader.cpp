@@ -12,126 +12,14 @@
 #include "SPIFFSImageReader.h"
 
 //===============================================================
+// Constants
+//===============================================================
+static const char* TAG = "spiffsreader";
+
+//===============================================================
 // Defines
 //===============================================================
 #define BUFPIXELS 200
-
-//===============================================================
-// Constructor
-//===============================================================
-SPIFFSImage::SPIFFSImage()
-{
-  Canvas16 = NULL;
-}
-
-//===============================================================
-// Destructor
-//===============================================================
-SPIFFSImage::~SPIFFSImage()
-{
-  Dealloc();
-}
-
-//===============================================================
-// Deallocates memory associated with SPIFFSImage object and
-// resets member variables to 'empty' state
-//===============================================================
-void SPIFFSImage::Dealloc()
-{
-  if (Canvas16)
-  {
-    delete Canvas16;
-    Canvas16 = NULL;
-  }
-}
-
-//===============================================================
-// Draws the canvas on the tft
-//===============================================================
-void SPIFFSImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT *tft, uint16_t transparencyColor)
-{
-  uint16_t* buffer = Canvas16->getBuffer();
-  int16_t height = Canvas16->height();
-  int16_t width = Canvas16->width();
-
-  // Write pixels
-  tft->startWrite();
-  for (int16_t row = 0; row < height; row++)
-  {
-    for (int16_t column = 0; column < width; column++)
-    {
-      uint16_t currentPixel = buffer[row * width + column];
-      if (currentPixel != transparencyColor)
-      {
-        tft->writePixel(x + column, y + row, currentPixel);
-      }
-    }
-  }
-  tft->endWrite();
-}
-
-//===============================================================
-// Moves the canvas on the tft
-//===============================================================
-void SPIFFSImage::Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_SPITFT *tft, uint16_t clearColor, uint16_t transparencyColor)
-{
-  uint16_t* buffer = Canvas16->getBuffer();
-  int16_t height = Canvas16->height();
-  int16_t width = Canvas16->width();
-
-  // Clear old image (only diff to new one, to avoid flickering)
-  tft->startWrite();
-  for (int16_t row = 0; row < height; row++)
-  {
-    for (int16_t column = 0; column < width; column++)
-    {
-      // Get old color value
-      uint16_t colorOld = buffer[row * width + column];
-
-      // Calculate new color indexes
-      int16_t newColumn = column - (x1 - x0);
-      int16_t newRow = row - (y1 - y0);
-      
-      // Get new color value
-      uint16_t colorNew = transparencyColor;
-      if (newColumn > 0 && newColumn < width &&
-        newRow > 0 && newRow < height)
-      {
-        colorNew = buffer[newRow * width + newColumn];
-      }
-      
-      // Reset pixel only if the color would be transparent and old color was not
-      if (colorOld != transparencyColor &&
-        colorNew == transparencyColor)
-      {
-        tft->writePixel(x0 + column, y0 + row, clearColor);
-      }
-    }
-  }
-  tft->endWrite();
-
-  // Draw new (moved) image
-  Draw(x1, y1, tft, transparencyColor);
-}
-
-//===============================================================
-// Return a pixel at the requested position
-//===============================================================
-uint16_t SPIFFSImage::GetPixel(int16_t x, int16_t y)
-{
-  uint16_t* buffer = Canvas16->getBuffer();
-  int16_t height = Canvas16->height();
-  int16_t width = Canvas16->width();
-
-  int16_t index = y * width + x;
-
-  if (index < width * height)
-  {
-    return buffer[index];
-  }
-  
-  return 0;
-}
 
 //===============================================================
 // Constructor
@@ -154,31 +42,16 @@ SPIFFSImageReader::~SPIFFSImageReader()
 //===============================================================
 // Loads BMP image file from SPIFFS into RAM
 //===============================================================
-ImageReturnCode SPIFFSImageReader::LoadBMP(const char *filename, SPIFFSImage *img)
+ImageReturnCode SPIFFSImageReader::LoadBMP(String filename, SPIFFSImage* img)
 {
-  uint16_t *dest;                             // Working buffer
-  uint32_t destidx = 0;                       // Working buffer pointer
-  uint32_t offset;                            // Start of image data in file
-  uint32_t headerSize;                        // Indicates BMP version
-  int16_t bmpWidth;                           // BMP width in pixels
-  int16_t bmpHeight;                          // BMP height in pixels
-  uint8_t planes;                             // BMP planes
-  uint8_t depth;                              // BMP bit depth
-  uint32_t compression = 0;                   // BMP compression mode
-  uint32_t rowSize;                           // >bmpWidth if scanline padding
-  uint8_t sdbuf[3 * BUFPIXELS] = {};          // BMP read buf (R+G+B/pixel)
-  uint16_t srcidx = sizeof sdbuf;             // Source buffer pointer
-  bool flip = true;                           // BMP is stored bottom-to-top
-  uint32_t bmpPos = 0;                        // Next pixel position in file
-  int16_t row;                                // Current pixel position row
-  int16_t column;                             // Current pixel position column
-  uint8_t r;                                  // Current pixel color red
-  uint8_t g;                                  // Current pixel color green
-  uint8_t b;                                  // Current pixel color blue
-  
-  // If an SPIFFSImage object is passed and currently contains anything,
-  // free its contents as it's about to be overwritten with new stuff
-  img->Dealloc();
+  ESP_LOGI(TAG, "Loading image '%s'", filename.c_str());
+
+  // Correct path
+  filename.trim();
+  if (!filename.startsWith("/"))
+  {
+    filename = "/" + filename;
+  }
 
   // Open requested file on SPIFFS
   if (!(_file = SPIFFS.open(filename, FILE_READ)))
@@ -196,24 +69,26 @@ ImageReturnCode SPIFFSImageReader::LoadBMP(const char *filename, SPIFFSImage *im
   }
 
   // BMP signature
-  (void)ReadLE32();         // Read & ignore file size
-  (void)ReadLE32();         // Read & ignore creator bytes
-  offset = ReadLE32();      // Start of image data
+  (void)ReadLE32();             // Read & ignore file size
+  (void)ReadLE32();             // Read & ignore creator bytes
+  uint32_t offset = ReadLE32(); // Start of image data in file
   
   // Read DIB header
-  headerSize = ReadLE32();
-  bmpWidth = ReadLE32();
-  bmpHeight = ReadLE32();
+  uint32_t headerSize = ReadLE32(); // Indicates BMP version
+  int16_t bmpWidth = ReadLE32();    // BMP width in pixels
+  int16_t bmpHeight = ReadLE32();   // BMP height in pixels
 
   // If bmpHeight is negative, image is in top-down order.
   // This is not canon but has been observed in the wild
+  bool flip = true;  // BMP is stored bottom-to-top
   if (bmpHeight < 0)
   {
     bmpHeight = -bmpHeight;
-    flip = false;
+    flip = false;   // BMP is stored top-to-bottom
   }
-  planes = ReadLE16();
-  depth = ReadLE16(); // Bits per pixel
+                          
+  uint8_t planes = ReadLE16(); // BMP planes
+  uint8_t depth = ReadLE16();  // BMP bit depth (Bits per pixel)
 
   // Check for correct color depth
   if (depth != 24)
@@ -223,6 +98,7 @@ ImageReturnCode SPIFFSImageReader::LoadBMP(const char *filename, SPIFFSImage *im
   }
 
   // Compression mode is present in later BMP versions (default = none)
+  uint32_t compression = 0; // BMP compression mode
   if (headerSize > 12)
   {
     compression = ReadLE32();
@@ -241,23 +117,30 @@ ImageReturnCode SPIFFSImageReader::LoadBMP(const char *filename, SPIFFSImage *im
     return IMAGE_ERR_FORMAT;
   }
 
-  // BMP rows are padded (if needed) to 4-byte boundary
-  rowSize = ((depth * bmpWidth + 31) / 32) * 4;
-
-  // Loading to RAM -- allocate GFX 16-bit canvas type
-  // Check for alloc OK
-  if (!(img->Canvas16 = new GFXcanvas16(bmpWidth, bmpHeight)))
+  // Loading to RAM
+  // Allocate 16-bit buffer image
+  if (!img->Allocate(bmpWidth, bmpHeight))
   {
     _file.close();
     return IMAGE_ERR_MALLOC;
   }
 
-  // Get working buffer pointer
-  dest = img->Canvas16->getBuffer();
+  // BMP rows are padded (if needed) to 4-byte boundary
+  uint32_t rowSize = ((depth * bmpWidth + 31) / 32) * 4; // > bmpWidth if scanline padding
+
+  // Read file buffer
+  uint8_t sdbuf[3 * BUFPIXELS] = {}; // BMP read buf (R+G+B/pixel)
+  uint16_t srcidx = sizeof sdbuf;    // Source buffer pointer
+  uint32_t bmpPos = 0;               // Next pixel position in file
+
+  // Get working buffer and working buffer pointer
+  uint32_t destidx = 0;
+  uint16_t* dest = img->GetBuffer();
 
   // For each scanline...
-  for (row = 0; row < bmpHeight; row++)
+  for (int16_t row = 0; row < bmpHeight; row++)
   {
+    // yield() for ESP32
     yield();
 
     // Seek to start of scan line.  It might seem labor-intensive
@@ -284,8 +167,8 @@ ImageReturnCode SPIFFSImageReader::LoadBMP(const char *filename, SPIFFSImage *im
       srcidx = sizeof sdbuf;
     }
 
-    // For each pixel...
-    for (column = 0; column < bmpWidth; column++)
+    // For each pixel
+    for (int16_t column = 0; column < bmpWidth; column++)
     {
       // Time to load more?
       if (srcidx >= sizeof sdbuf)
@@ -298,13 +181,13 @@ ImageReturnCode SPIFFSImageReader::LoadBMP(const char *filename, SPIFFSImage *im
       }
 
       // Convert each pixel from BMP to 565 format, save in dest
-      b = sdbuf[srcidx++];
-      g = sdbuf[srcidx++];
-      r = sdbuf[srcidx++];
+      uint8_t b = sdbuf[srcidx++];
+      uint8_t g = sdbuf[srcidx++];
+      uint8_t r = sdbuf[srcidx++];
       dest[destidx++] = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 
-    } // end column loop
-  } // end row loop
+    }
+  }
 
   // Close file
   _file.close();

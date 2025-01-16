@@ -1,1 +1,1 @@
-configWildBerry.json
+configCocktailCube.json
