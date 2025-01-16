@@ -27,15 +27,15 @@
   "WIFI_COLOR_LIQUID_3" : "0x00E784",
   "IMAGE_LOGO" : "/LogoAperoliker.bmp",
   "IMAGE_GLASS" : "/GlassAperol.bmp",
-  "IMAGE_BOTTLE1" : "/BottleAperol.bmp"",
+  "IMAGE_BOTTLE1" : "/BottleAperol.bmp",
   "IMAGE_BOTTLE2" : "",
   "IMAGE_BOTTLE3" : "",
   "IMAGE_BOTTLE4" : "",
-  "TFT_TRANSPARENCY_COLOR": "0x07E0"
-  "TFT_LOGO_POS_X" : 0
-  "TFT_LOGO_POS_Y" : 25
-  "TFT_GLASS_POS_X" : 140
-  "TFT_GLASS_POS_Y" : 85
-  "TFT_BOTTLE_POS_X" : 40
+  "TFT_TRANSPARENCY_COLOR": "0x07E0",
+  "TFT_LOGO_POS_X" : 0,
+  "TFT_LOGO_POS_Y" : 25,
+  "TFT_GLASS_POS_X" : 140,
+  "TFT_GLASS_POS_Y" : 85,
+  "TFT_BOTTLE_POS_X" : 40,
   "TFT_BOTTLE_POS_Y" : 5
 }
