@@ -22,7 +22,7 @@
 #include <esp_log.h>
 #include "Config.h"
 #include "StateMachine.h"
-#include "SPIFFSImageReader.h"
+#include "SPIFFSFLOImage.h"
 #include "AngleHelper.h"
 #include "FlowMeterDriver.h"
 
@@ -271,14 +271,12 @@ class DisplayDriver
     char _output[30];
 
     // Image pointer
-    SPIFFSImage* _imageLogo;
-    SPIFFSImage* _imageGlass;
-    SPIFFSImage* _imageBottle1;
-    SPIFFSImage* _imageBottle2;
-    SPIFFSImage* _imageBottle3;
-    SPIFFSImage* _imageBottle4;
-    SPIFFSImageReader reader;
-    bool _imagesAvailable = false;
+    SPIFFSFLOImage* _imageLogo;
+    SPIFFSFLOImage* _imageGlass;
+    SPIFFSFLOImage* _imageBottle1;
+    SPIFFSFLOImage* _imageBottle2;
+    SPIFFSFLOImage* _imageBottle3;
+    SPIFFSFLOImage* _imageBottle4;
 
     // Current mixture settings
     MixerState _menuState = eDashboard;
@@ -349,7 +347,7 @@ class DisplayDriver
     void SelectBarBottle(BarBottle barBottle, int16_t x0, int16_t y, uint16_t color);
 
     // Returns a pointer to the requested bar bottle image
-    SPIFFSImage* GetBarBottlePointer(BarBottle barBottle);
+    SPIFFSFLOImage* GetBarBottlePointer(BarBottle barBottle);
     
     // Draws a string centered
     void DrawCenteredString(const String &text, int16_t x, int16_t y, bool underlined = false, uint16_t lineColor = 0, bool backGround = false, uint16_t backGroundColor = 0);

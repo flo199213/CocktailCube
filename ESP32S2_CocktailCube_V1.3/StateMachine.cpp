@@ -1157,6 +1157,7 @@ void StateMachine::UpdateValues(uint32_t clientID)
   Display.SetMenuState(_currentMenuState);
   Display.SetDashboardLiquid(_dashboardLiquid);
   Display.SetCleaningLiquid(_cleaningLiquid);
+  Display.SetBar(_barBottle1, _barBottle2, _barBottle3);
   Display.SetAngles(_liquid1Angle_Degrees, _liquid2Angle_Degrees, _liquid3Angle_Degrees);
   Display.SetPercentages(_liquid1_Percentage, _liquid2_Percentage, _liquid3_Percentage);
   

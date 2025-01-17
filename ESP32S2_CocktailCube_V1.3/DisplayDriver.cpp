@@ -66,49 +66,38 @@ void DisplayDriver::LoadImages()
   // Log info
   ESP_LOGI(TAG, "Begin loading images");
 
-  // Set images available
-  // Resets if a single image failes to load
-  _imagesAvailable = true;
-
   // Load startup image to RAM: Logo
-  _imageLogo = new SPIFFSImage();
-  ImageReturnCode returnCode = reader.LoadBMP(config.imageLogo, _imageLogo);
-  ESP_LOGI(TAG, "Load image 'Logo': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
-  _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+  _imageLogo = new SPIFFSFLOImage();
+  ImageReturnCode returnCode = _imageLogo->Allocate(config.imageLogo);
+  ESP_LOGI(TAG, "Load image 'Logo': %s (Heap: %d / %d Bytes)", _imageLogo->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
 
   // Load startup image to RAM: Glass
-  _imageGlass = new SPIFFSImage();
-  returnCode = reader.LoadBMP(config.imageGlass, _imageGlass);
-  ESP_LOGI(TAG, "Load image 'Glass': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
-  _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+  _imageGlass = new SPIFFSFLOImage();
+  returnCode = _imageGlass->Allocate(config.imageGlass);
+  ESP_LOGI(TAG, "Load image 'Glass': %s (Heap: %d / %d Bytes)", _imageGlass->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
 
   // Load startup images to RAM: Bottle 1
-  _imageBottle1 = new SPIFFSImage();
-  returnCode = reader.LoadBMP(config.imageBottle1, _imageBottle1);
-  ESP_LOGI(TAG, "Load image 'Bottle 1': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
-  _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+  _imageBottle1 = new SPIFFSFLOImage();
+  returnCode = _imageBottle1->Allocate(config.imageBottle1);
+  ESP_LOGI(TAG, "Load image 'Bottle 1': %s (Heap: %d / %d Bytes)", _imageBottle1->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
 
   if (!config.isMixer)
   {
     // Load startup images to RAM: Bottle 2
-    _imageBottle2 = new SPIFFSImage();
-    returnCode = reader.LoadBMP(config.imageBottle2, _imageBottle2);
-    ESP_LOGI(TAG, "Load image 'Bottle 2': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
-    _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+    _imageBottle2 = new SPIFFSFLOImage();
+    returnCode = _imageBottle2->Allocate(config.imageBottle2);
+    ESP_LOGI(TAG, "Load image 'Bottle 2': %s (Heap: %d / %d Bytes)", _imageBottle2->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
     
     // Load startup images to RAM: Bottle 3
-    _imageBottle3 = new SPIFFSImage();
-    returnCode = reader.LoadBMP(config.imageBottle3, _imageBottle3);
-    ESP_LOGI(TAG, "Load image 'Bottle 3': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
-    _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+    _imageBottle3 = new SPIFFSFLOImage();
+    returnCode = _imageBottle3->Allocate(config.imageBottle3);
+    ESP_LOGI(TAG, "Load image 'Bottle 3': %s (Heap: %d / %d Bytes)", _imageBottle3->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
     
     // Load startup images to RAM: Bottle 4
-    _imageBottle4 = new SPIFFSImage();
-    returnCode = reader.LoadBMP(config.imageBottle4, _imageBottle4);
-    ESP_LOGI(TAG, "Load image 'Bottle 4': %s (Heap: %d / %d Bytes)", reader.PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
-    _imagesAvailable &= returnCode == IMAGE_SUCCESS;
+    _imageBottle4 = new SPIFFSFLOImage();
+    returnCode = _imageBottle4->Allocate(config.imageBottle4);
+    ESP_LOGI(TAG, "Load image 'Bottle 4': %s (Heap: %d / %d Bytes)", _imageBottle4->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
   }
-  ESP_LOGI(TAG, "SPIFFS images are %s", (_imagesAvailable ? "available" : "NOT available"));
 
   // Log info
   ESP_LOGI(TAG, "Finished loading images");
@@ -180,55 +169,66 @@ void DisplayDriver::ShowIntroPage()
   _tft->fillRect(0, 0,                TFT_WIDTH, TFT_HEIGHT * 0.8, config.tftColorStartPageBackground);
   _tft->fillRect(0, TFT_HEIGHT * 0.8, TFT_WIDTH, TFT_HEIGHT * 0.2, config.tftColorStartPageForeground);
 
-  if (_imagesAvailable)
+  // Draw intro images (Attention: Order is decisive!)
+  if (_imageBottle1 &&
+    _imageGlass &&
+    _imageLogo &&
+    _imageBottle1->IsValid() &&
+    _imageGlass->IsValid() &&
+    _imageLogo->IsValid())
   {
-    // Draw intro images (Attention: Order is decisive!)
-    _imageBottle1->Draw(config.tftBottlePosX, config.tftBottlePosY, _tft, config.tftTransparencyColor);
-    _imageGlass->Draw(config.tftGlassPosX,    config.tftGlassPosY,  _tft, config.tftTransparencyColor);
-    _imageLogo->Draw(config.tftLogoPosX,      config.tftLogoPosY,   _tft, config.tftTransparencyColor);
-
-    // Free memory
-    //if (_imageLogo) {  _imageLogo->Deallocate(); _imageLogo = NULL; } // Do NOT delete logo image for usage with screen saver!
-    if (_imageGlass)
-    {
-      _imageGlass->Deallocate();
-      _imageGlass = NULL;
-      ESP_LOGI(TAG, "Image 'Glass' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
-    }
-
-    // Do NOT delete bottle images for usage for bar display !
-    if (config.isMixer)
-    {
-      if (_imageBottle1)
-      {
-        _imageBottle1->Deallocate();
-        _imageBottle1 = NULL;
-        ESP_LOGI(TAG, "Image 'Bottle 1' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
-      } 
-      if (_imageBottle2)
-      {
-        _imageBottle2->Deallocate();
-        _imageBottle2 = NULL;
-        ESP_LOGI(TAG, "Image 'Bottle 2' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
-      }
-      if (_imageBottle3)
-      {
-        _imageBottle3->Deallocate();
-        _imageBottle3 = NULL;
-        ESP_LOGI(TAG, "Image 'Bottle 3' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
-      }
-      if (_imageBottle4)
-      {
-        _imageBottle4->Deallocate();
-        _imageBottle4 = NULL;
-        ESP_LOGI(TAG, "Image 'Bottle 4' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
-      }
-    }
+    _imageBottle1->Draw(config.tftBottlePosX, config.tftBottlePosY, _tft);
+    _imageGlass->Draw(config.tftGlassPosX,    config.tftGlassPosY,  _tft);
+    _imageLogo->Draw(config.tftLogoPosX,      config.tftLogoPosY,   _tft);
   }
   else
   {
     // Draw info box (fallback)
     DrawInfoBox("- Startpage -", "No SPIFFS Files!");
+  }
+
+  // Do NOT delete logo image for usage for screensaver !
+  /*if (_imageLogo)
+  {
+    _imageLogo->Deallocate();
+    _imageLogo = NULL;
+    ESP_LOGI(TAG, "Image 'Logo' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+  }*/
+  
+  if (_imageGlass)
+  {
+    _imageGlass->Deallocate();
+    _imageGlass = NULL;
+    ESP_LOGI(TAG, "Image 'Glass' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+  }
+
+  // Do NOT delete bottle images for usage for bar display !
+  if (config.isMixer)
+  {
+    if (_imageBottle1)
+    {
+      _imageBottle1->Deallocate();
+      _imageBottle1 = NULL;
+      ESP_LOGI(TAG, "Image 'Bottle 1' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+    }
+    if (_imageBottle2)
+    {
+      _imageBottle2->Deallocate();
+      _imageBottle2 = NULL;
+      ESP_LOGI(TAG, "Image 'Bottle 2' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+    }
+    if (_imageBottle3)
+    {
+      _imageBottle3->Deallocate();
+      _imageBottle3 = NULL;
+      ESP_LOGI(TAG, "Image 'Bottle 3' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+    }
+    if (_imageBottle4)
+    {
+      _imageBottle4->Deallocate();
+      _imageBottle4 = NULL;
+      ESP_LOGI(TAG, "Image 'Bottle 4' deleted (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+    }
   }
 
   ESP_LOGI(TAG, "After intro page (images free-ed):");
@@ -630,15 +630,31 @@ void DisplayDriver::DrawMenu(bool isfullUpdate)
 
   if (_lastDraw_MenuState != _menuState || isfullUpdate)
   {
+    uint16_t offsetIndex = (uint16_t)_lastDraw_MenuState - 1;
+    if (!config.isMixer &&
+      _lastDraw_MenuState == eBar)
+    {
+      // Fix for bar stock (enum index 6)
+      offsetIndex = 2;
+    }
+
     x = MENU_MARGIN_HORI - 2;
-    y = HEADEROFFSET_Y + marginToHeader + ((uint16_t)_lastDraw_MenuState - 1) * MENU_LINEOFFSET - 6 - MENU_SELECTOR_HEIGHT / 2;
+    y = HEADEROFFSET_Y + marginToHeader + offsetIndex * MENU_LINEOFFSET - 6 - MENU_SELECTOR_HEIGHT / 2;
     width = TFT_WIDTH - 2 * MENU_MARGIN_HORI;
     height = MENU_SELECTOR_HEIGHT;
 
     // Reset old menu selection on display
     _tft->drawRoundRect(x, y, width, height, MENU_SELECTOR_CORNERRADIUS, config.tftColorBackground);
 
-    y = HEADEROFFSET_Y + marginToHeader + ((uint16_t)_menuState - 1) * MENU_LINEOFFSET - 6 - MENU_SELECTOR_HEIGHT / 2;
+    offsetIndex = (uint16_t)_menuState - 1;
+    if (!config.isMixer &&
+      _menuState == eBar)
+    {
+      // Fix for bar stock (enum index 6)
+      offsetIndex = 2;
+    }
+
+    y = HEADEROFFSET_Y + marginToHeader + offsetIndex * MENU_LINEOFFSET - 6 - MENU_SELECTOR_HEIGHT / 2;
 
     // Draw new menu selection on display
     _tft->drawRoundRect(x, y, width, height, MENU_SELECTOR_CORNERRADIUS, config.tftColorMenuSelector);
@@ -693,6 +709,8 @@ void DisplayDriver::DrawBar(bool isDashboard, bool isfullUpdate)
     _lastDraw_liquid2_Percentage = _liquid2_Percentage;
     _lastDraw_liquid3_Percentage = _liquid3_Percentage;
   }
+
+  ESP_LOGI(TAG, "_barBottles: %d %d %d", _barBottle1, _barBottle2, _barBottle3);
 }
 
 //===============================================================
@@ -1036,17 +1054,19 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
 //===============================================================
 void DisplayDriver::DrawScreenSaver()
 {
-  int16_t logoWidth = _imagesAvailable ? _imageLogo->Width() : 0;
-  int16_t logoHeight = _imagesAvailable ? _imageLogo->Height() : 0;
+  bool logoAvailable = _imageLogo != NULL && _imageLogo->IsValid();
+
+  int16_t logoWidth = logoAvailable ? _imageLogo->Width() : 0;
+  int16_t logoHeight = logoAvailable ? _imageLogo->Height() : 0;
   
   // Move logo indexes
   int16_t logo_x = _lastLogo_x + _xDir;
   int16_t logo_y = _lastLogo_y + _yDir;
 
   // Move logo if image is available
-  if (_imagesAvailable)
+  if (logoAvailable)
   {
-    _imageLogo->Move(_lastLogo_x, _lastLogo_y, logo_x, logo_y, _tft, config.tftColorBackground, config.tftTransparencyColor);
+    _imageLogo->Move(_lastLogo_x, _lastLogo_y, logo_x, logo_y, _tft, config.tftColorBackground);
   }
 
   // Impact collision with the left or right edge
@@ -1068,10 +1088,10 @@ void DisplayDriver::DrawScreenSaver()
     if (_stars[index].Size >= _stars[index].MaxSize)
     {
       // Clear old star only outside of the non-transparent part of the logo
-      if (!_imagesAvailable ||
+      if (!logoAvailable ||
         !(_stars[index].X > logo_x && _stars[index].X < logo_x + logoWidth &&
         _stars[index].Y > logo_y && _stars[index].Y < logo_y + logoHeight &&
-        _imageLogo->GetPixel(_stars[index].X - logo_x, _stars[index].Y - logo_y) != config.tftTransparencyColor))
+        _imageLogo->GetPixel(_stars[index].X - logo_x, _stars[index].Y - logo_y) != _imageLogo->TransparencyColor()))
       {
         DrawStar(_stars[index].X, _stars[index].Y, _stars[index].FullStars, config.tftColorBackground, _stars[index].Size);
       }
@@ -1084,10 +1104,10 @@ void DisplayDriver::DrawScreenSaver()
     }
 
     // Draw new star only outside of the non-transparent part of the logo
-    if (!_imagesAvailable || 
+    if (!logoAvailable || 
       !(_stars[index].X > logo_x && _stars[index].X < logo_x + logoWidth &&
       _stars[index].Y > logo_y && _stars[index].Y < logo_y + logoHeight &&
-      _imageLogo->GetPixel(_stars[index].X - logo_x, _stars[index].Y - logo_y) != config.tftTransparencyColor))
+      _imageLogo->GetPixel(_stars[index].X - logo_x, _stars[index].Y - logo_y) != _imageLogo->TransparencyColor()))
     {
       DrawStar(_stars[index].X, _stars[index].Y, _stars[index].FullStars, config.tftColorForeground, _stars[index].Size);
     }
@@ -1245,38 +1265,42 @@ void DisplayDriver::DrawBarPart(int16_t x0, int16_t y, MixtureLiquid liquid, Bar
 //===============================================================
 void DisplayDriver::ClearBarBottle(BarBottle lastDraw_barBottle, BarBottle barBottle, int16_t x0, int16_t y, uint16_t clearColor)
 {
-  if (_imagesAvailable != IMAGE_SUCCESS ||
-    lastDraw_barBottle == eEmpty)
+  if (lastDraw_barBottle == eEmpty)
   {
     return;
   }
 
   // Determine image pointers
-  SPIFFSImage* barBottlePointerLast = GetBarBottlePointer(lastDraw_barBottle);
-  SPIFFSImage* barBottlePointerNew = GetBarBottlePointer(barBottle);
+  SPIFFSFLOImage* barBottlePointerLast = GetBarBottlePointer(lastDraw_barBottle);
+  SPIFFSFLOImage* barBottlePointerNew = GetBarBottlePointer(barBottle);
 
-  // Clear difference from last to new image
-  int16_t xLast = x0 - barBottlePointerLast->Width() / 2;
-  int16_t xNew = x0 - barBottlePointerNew->Width() / 2;
-  barBottlePointerLast->ClearDiff(xLast, y, xNew, y, barBottlePointerNew, _tft, config.tftTransparencyColor, clearColor);
+  if (barBottlePointerLast &&
+    barBottlePointerNew &&
+    barBottlePointerLast->IsValid() &&
+    barBottlePointerNew->IsValid())
+  {
+    // Clear difference from last to new image
+    int16_t xLast = x0 - barBottlePointerLast->Width() / 2;
+    int16_t xNew = x0 - barBottlePointerNew->Width() / 2;
+    barBottlePointerLast->ClearDiff(xLast, y, xNew, y, barBottlePointerNew, _tft, clearColor);
+  }
 }
 
 //===============================================================
 // Draws a bar bottle
 //===============================================================
 void DisplayDriver::DrawBarBottle(BarBottle barBottle, int16_t x0, int16_t y)
-{
-  if (_imagesAvailable != IMAGE_SUCCESS)
-  {
-    return;
-  }
-  
+{  
   // Determine correct pointer
-  SPIFFSImage* barBottlePointer = GetBarBottlePointer(barBottle);
+  SPIFFSFLOImage* barBottlePointer = GetBarBottlePointer(barBottle);
 
-  // Draw bottle
-  int16_t x = x0 - barBottlePointer->Width() / 2;
-  barBottlePointer->Draw(x, y, _tft, config.tftTransparencyColor, config.tftColorBackground, barBottle == eEmpty); // Use red wine bottle for empty selection (draw as shadow -> black)
+  if (barBottlePointer &&
+    barBottlePointer->IsValid())
+  {
+    // Draw bottle
+    int16_t x = x0 - barBottlePointer->Width() / 2;
+    barBottlePointer->Draw(x, y, _tft, config.tftColorBackground, barBottle == eEmpty); // Use red wine bottle for empty selection (draw as shadow -> black)
+  }
 }
 
 //===============================================================
@@ -1284,26 +1308,25 @@ void DisplayDriver::DrawBarBottle(BarBottle barBottle, int16_t x0, int16_t y)
 //===============================================================
 void DisplayDriver::SelectBarBottle(BarBottle barBottle, int16_t x0, int16_t y, uint16_t color)
 {
-  if (_imagesAvailable != IMAGE_SUCCESS)
-  {
-    return;
-  }
-
   // Determine correct pointer
-  SPIFFSImage* barBottlePointer = GetBarBottlePointer(barBottle);
+  SPIFFSFLOImage* barBottlePointer = GetBarBottlePointer(barBottle);
 
-  // Draw selection shadow with move function
-  int16_t selectionWidth = 3;
-  int16_t x = x0 - barBottlePointer->Width() / 2;
-  barBottlePointer->Move(x - selectionWidth, y, x, y, _tft, color, config.tftTransparencyColor, true);
-  barBottlePointer->Move(x + selectionWidth, y, x, y, _tft, color, config.tftTransparencyColor, true);
-  barBottlePointer->Move(x, y - selectionWidth, x, y, _tft, color, config.tftTransparencyColor, true);
+  if (barBottlePointer &&
+    barBottlePointer->IsValid())
+  {
+    // Draw selection shadow with move function
+    int16_t selectionWidth = 3;
+    int16_t x = x0 - barBottlePointer->Width() / 2;
+    barBottlePointer->Move(x - selectionWidth, y, x, y, _tft, color, true);
+    barBottlePointer->Move(x + selectionWidth, y, x, y, _tft, color, true);
+    barBottlePointer->Move(x, y - selectionWidth, x, y, _tft, color, true);
+  }
 }
 
 //===============================================================
 // Returns a pointer to the requested bar bottle image
 //===============================================================
-SPIFFSImage* DisplayDriver::GetBarBottlePointer(BarBottle barBottle)
+SPIFFSFLOImage* DisplayDriver::GetBarBottlePointer(BarBottle barBottle)
 {
   switch (barBottle)
   {
