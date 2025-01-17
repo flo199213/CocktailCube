@@ -31,7 +31,6 @@
   "IMAGE_BOTTLE2" : "/BottleWhiteWine.flo",
   "IMAGE_BOTTLE3" : "/BottleRoseWine.flo",
   "IMAGE_BOTTLE4" : "/BottleSparklingWater.flo",
-  "TFT_TRANSPARENCY_COLOR": "0x07E0",
   "TFT_LOGO_POS_X" : 0,
   "TFT_LOGO_POS_Y" : 25,
   "TFT_GLASS_POS_X" : 140,
