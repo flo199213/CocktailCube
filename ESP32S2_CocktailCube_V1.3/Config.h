@@ -122,7 +122,6 @@ struct Config
   String imageBottle3 = "";
   String imageBottle4 = "";
 
-  uint16_t tftTransparencyColor;
   int16_t tftLogoPosX;
   int16_t tftLogoPosY;
   int16_t tftGlassPosX;

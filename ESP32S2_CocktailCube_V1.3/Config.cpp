@@ -107,7 +107,6 @@ bool LoadConfig(const char* filename)
   config.imageBottle3 = doc["IMAGE_BOTTLE3"].as<String>();
   config.imageBottle4 = doc["IMAGE_BOTTLE4"].as<String>();
 
-  config.tftTransparencyColor = HexStringToUint16(doc["TFT_TRANSPARENCY_COLOR"].as<String>());
   config.tftLogoPosX = doc["TFT_LOGO_POS_X"];
   config.tftLogoPosY = doc["TFT_LOGO_POS_Y"];
   config.tftGlassPosX = doc["TFT_GLASS_POS_X"];
