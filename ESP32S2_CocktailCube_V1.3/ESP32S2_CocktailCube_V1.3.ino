@@ -11,11 +11,12 @@
  * - Board: "ESP32S2 Dev Module"
  * - CPU Frequency: "240MHz (WiFi)"
  * - USB CDC On Boot: "Enabled"   <------------ Important!
+ * - Upload Mode: "Internal USB"  <------------ Important!
+ * - Core Debug Level: "Verbose"  <------------ Only for Debugging
  * - USB DFU On Boot: "Disabled"
  * - USB Firmware MSC On Boot: "Disabled"
  * - Flash Size: "4Mb (32Mb)"
  * - Partition Scheme: "No OTA (2MB APP/2MB SPIFFS)"
- * - Upload Mode: "Internal USB"
  * - Upload Speed: "921600"
  * 
  * -> Leave everything else on default!
@@ -36,7 +37,6 @@
 // Includes
 //===============================================================
 #include <Arduino.h>
-#include <USB.h>
 #include <SPI.h>
 #include <SPIFFS.h>
 #include <WiFi.h>
@@ -113,9 +113,6 @@ const uint32_t AliveTime_ms = 2000;
 uint32_t blinkTimestamp = 0;
 const uint32_t BlinkTime_ms = 100;
 
-// Task handles
-TaskHandle_t mainTaskHandle = NULL;
-
 //===============================================================
 // Interrupt on pumps enable changing state
 //===============================================================
@@ -171,27 +168,25 @@ void IRAM_ATTR ISR_EncoderB()
 //===============================================================
 void setup(void)
 {
-  // Start USB CDC, for the case "USB CDC On Boot" is missing in buid defines
-  USBSerial.begin();
-  USB.begin();
+ // Start USB CDC // (redundant, for build verification purposes only)
+  USBSerial.begin(); // <--- If you get an compile error here, you must
+  // enable "USB CDC On Boot" in the Arduino IDE Target settings for ESP32-S2!
 
   // Initialize serial communication
   Serial.begin(115200);
-#if defined(DEBUG_MIXER)
-  delay(2000);
-#endif
+
+  // Show startup log
   ESP_LOGI(TAG, "-- CocktailCube %s --", APP_VERSION);
   ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
   ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
 
   // Initialize SPI
   ESP_LOGI(TAG, "Initialize SPI");
-  SPIClass* spi = new SPIClass(HSPI);
-  spi->begin(PIN_TFT_SCL, -1, PIN_TFT_SDA, PIN_TFT_CS);
+  SPI.begin();
 
   // Initialize display
   ESP_LOGI(TAG, "Initialize display");
-  tft = new Adafruit_ST7789(spi, PIN_TFT_CS, PIN_TFT_DC, PIN_TFT_RST);
+  tft = new Adafruit_ST7789(PIN_TFT_CS, PIN_TFT_DC, PIN_TFT_RST);
   Display.Begin(tft);
   ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
   ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
@@ -328,16 +323,6 @@ void setup(void)
   // Start main task
   ESP_LOGI(TAG, "Start main task");
   BaseType_t xReturned = xTaskCreate(Main_Task, "Main_Task", 4096, NULL, 10, &mainTaskHandle);
-  if (xReturned != pdPASS)
-  {
-    // Draw info box with error text
-    Display.DrawInfoBox("Hardware Error", "Main task not running");
-    while(true)
-    {
-      delay(1);
-    }
-  }
-
   // Final output
   ESP_LOGI(TAG, "Setup Finished");
 }
@@ -386,30 +371,10 @@ void loop()
   FlowMeter.SaveAsync();
 
 #if defined(WIFI_MIXER)
+  // Run statemachine with main task event
+  Statemachine.Execute(eMain);
+
   // Update wifi, webserver and clients
   Wifihandler.Update();
 #endif
 }
-
-//===============================================================
-// Main task function
-//===============================================================
-void Main_Task(void *arg)
-{
-  while(1)
-  {
-    // Show debug alive message
-    if ((millis() - aliveTimestampMain) > AliveTime_ms)
-    {
-      aliveTimestampMain = millis();
-      ESP_LOGI(TAG, "Main Alive");
-    }
-
-    // Run statemachine with main task event
-    Statemachine.Execute(eMain);
-
-    // Execution time for the other tasks
-    vTaskDelay(pdMS_TO_TICKS(5));
-  }
-}
-
