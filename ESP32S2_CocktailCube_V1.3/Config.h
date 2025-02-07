@@ -25,6 +25,13 @@
 #define APP_COPYRIGHT                     "2025"
 #define SETTINGS_NAME                     "Settings"
 
+// "Debug" means that the ESP will wait 2 seconds each time it is started
+// because the start of the serial debug output on ESP32-S2 takes this time
+//#define DEBUG_MIXER     // Uncomment for debug build
+
+// Using the mixer without wifi makes the firmware more stable
+//#define WIFI_MIXER      // Uncomment for wifi usage
+
 // Set the value to 1 or -1 if your encoder is turning in the wrong direction
 #define ENCODER_DIRECTION                 1
 

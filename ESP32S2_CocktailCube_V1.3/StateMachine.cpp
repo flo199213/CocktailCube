@@ -49,6 +49,7 @@ void StateMachine::Begin(uint8_t pinBuzzer)
   ESP_LOGI(TAG, "Finished initializing state machine");
 }
 
+#if defined(WIFI_MIXER)
 //===============================================================
 // Updates cycle timespan value from wifi
 //===============================================================
@@ -111,6 +112,7 @@ bool StateMachine::UpdateValuesFromWifi(uint32_t clientID, MixtureLiquid liquid,
 
   return true;
 }
+#endif
 
 //===============================================================
 // Returns the angle for a given liquid
@@ -140,6 +142,7 @@ MixerState StateMachine::GetCurrentState()
   return _currentState;
 }
 
+#if defined(WIFI_MIXER)
 //===============================================================
 // Handles new wifi data, should be called in state machine
 //===============================================================
@@ -215,6 +218,7 @@ void StateMachine::HandleNewWifiData(MixerEvent event)
     }
   }
 }
+#endif
 
 //===============================================================
 // General state machine execution function
@@ -309,11 +313,13 @@ void StateMachine::FctMenu(MixerEvent event)
           Display.DrawMenu();
         }
 
+#if defined(WIFI_MIXER)
         // Draw wifi icons
         Display.DrawWifiIcons();
 
         // Check for new wifi data and handle it if required
         HandleNewWifiData(event);
+#endif
 
         // Check for button press
         if (EncoderButton.IsButtonPress())
@@ -594,11 +600,13 @@ void StateMachine::FctDashboard(MixerEvent event)
           delay(200);
         }
 
+#if defined(WIFI_MIXER)
         // Draw wifi icons
         Display.DrawWifiIcons();
 
         // Check for new wifi data and handle it if required
         HandleNewWifiData(event);
+#endif
 
         // Check for long button press
         if (EncoderButton.IsLongButtonPress())
@@ -677,11 +685,13 @@ void StateMachine::FctCleaning(MixerEvent event)
           delay(200);
         }
 
+#if defined(WIFI_MIXER)
         // Draw wifi icons
         Display.DrawWifiIcons();
 
         // Check for new wifi data and handle it if required
         HandleNewWifiData(event);
+#endif
 
         // Check for long button press
         if (EncoderButton.IsLongButtonPress())
@@ -743,8 +753,11 @@ void StateMachine::FctReset(MixerEvent event)
       break;
     case eMain:
       {
+
+#if defined(WIFI_MIXER)
         // Check for new wifi data and handle it if required
         HandleNewWifiData(event);
+#endif
 
         // Wait for the reset page display time
         if ((millis() - _resetTimestamp) > ResetTime_ms)
@@ -856,8 +869,10 @@ void StateMachine::FctBar(MixerEvent event)
           delay(200);
         }
 
+#if defined(WIFI_MIXER)
         // Draw wifi icons
         Display.DrawWifiIcons();
+#endif
 
         // Check for button press
         if (EncoderButton.IsButtonPress())
@@ -946,13 +961,16 @@ void StateMachine::FctSettings(MixerEvent event)
           // Update cycle timespan
           Pumps.SetCycleTimespan(Pumps.GetCycleTimespan() + currentEncoderIncrements * 20);
 
+#if defined(WIFI_MIXER)
           // Update wifi clients (client ID = 0 -> no client)
           Wifihandler.UpdateCycleTimespanToClients(0);
+#endif
 
           // Draw settings in partial update mode
           Display.DrawSettings();
         }
 
+#if defined(WIFI_MIXER)
         // Check for short button press
         if (EncoderButton.IsButtonPress())
         {
@@ -972,6 +990,7 @@ void StateMachine::FctSettings(MixerEvent event)
 
         // Check for new wifi data and handle it if required
         HandleNewWifiData(event);
+#endif
 
         // Check for long button press
         if (EncoderButton.IsLongButtonPress())
@@ -1002,7 +1021,9 @@ void StateMachine::FctSettings(MixerEvent event)
     case eExit:
       {
         Pumps.Save();
+#if defined(WIFI_MIXER)
         Wifihandler.Save();
+#endif
       }
       break;
     default:
@@ -1204,8 +1225,10 @@ void StateMachine::UpdateValues(uint32_t clientID)
       break;
   }
 
+#if defined(WIFI_MIXER)
   // Update wifi clients
   Wifihandler.UpdateLiquidAnglesToClients(clientID);
+#endif
 }
 
 //===============================================================

@@ -8,14 +8,6 @@
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi"/>
     
     <style type="text/css" media="screen">
-
-.infoText
-{
-  padding-left: 10px;
-  font-size: 12px;
-  font-family: Verdana, Arial, Sans-serif;
-}
-	
 .contextMenu
 {
   z-index: 300;
@@ -91,10 +83,9 @@
   user-select: none;
   color: #444;
   line-height: 16px;
-  display: flex;
 }
 
-.leafName
+.tvu span
 {
   margin-bottom:5px;
   padding: 0 0 0 18px;
@@ -106,16 +97,7 @@
   background-position: 0px 0px;
 }
 
-.leafSize
-{
-  margin-bottom:5px;
-  padding: 0 0 0 18px;
-  display: inline-block;
-  height: 16px;
-  vertical-align: middle;
-}
-
-.leafName:hover
+.tvu span:hover
 {
   text-decoration: underline;
 }
@@ -423,17 +405,14 @@ function createFileTree(element)
     };
   }
 
-  function createTreeLeafName(path, name)
+  function createTreeLeaf(path, name, size)
   {
     var leaf = document.createElement("li");
     leaf.id = path + name;
-	
-	// Create the span for the name
     var label = document.createElement("span");
-	label.className = "leafName";
-    label.innerHTML = name;  
+    label.innerHTML = name;
     leaf.appendChild(label);
-	    
+    
     leaf.oncontextmenu = function(e)
     {
       e.preventDefault();
@@ -442,47 +421,27 @@ function createFileTree(element)
     };
     return leaf;
   }
-  function createTreeLeafSize(path, size)
-  {
-    var leaf = document.createElement("li");
-		
-	// Create the span for the size
-	var label = document.createElement("span");
-	label.className = "leafSize";
-	label.innerHTML = "(Size: " + size / 1000.0 + "kB)";
-  
-    leaf.appendChild(label);
-	
-    return leaf;
-  }
-
 
   function addList(parent, path, items)
   {
     sortByKey(items, 'name');
     
     var list = document.createElement("ul");
-    var sizes = document.createElement("ul");
     parent.appendChild(list);
-    parent.appendChild(sizes);
     
     var ll = items.length;
     for (var index = 0; index < ll; index++)
     {
       if (items[index].type === "file")
       {
-        list.appendChild(createTreeLeafName(path, items[index].name));
-        sizes.appendChild(createTreeLeafSize(path, items[index].size));
+        list.appendChild(createTreeLeaf(path, items[index].name, items[index].size));
       }
     }
   }
 
   this.refreshPath = function()
   {
-    while (treeRoot.firstChild)
-    {
-	  treeRoot.removeChild(treeRoot.firstChild);
-    }
+    treeRoot.removeChild(treeRoot.childNodes[0]);
     httpGet(treeRoot, "/");
   };
 
@@ -503,10 +462,7 @@ function createFileTree(element)
       }
       else
       {
-	    while (treeRoot.firstChild)
-		{
-          treeRoot.removeChild(treeRoot.firstChild);
-		}
+        treeRoot.removeChild(treeRoot.childNodes[0]);
         httpGet(treeRoot, "/");
       }
     }
@@ -533,22 +489,17 @@ function createFileTree(element)
 }
 
 function createFileUploader(element, fileTree)
-{
+{  
   // Create refresh button
   var refreshButton = document.createElement("button");
   refreshButton.innerHTML = 'Refresh List';
   document.getElementById(element).appendChild(refreshButton);
-  
-  // Register click handler for refresh button
-  refreshButton.onclick = function(e)
-  {
-    fileTree.refreshPath();
-  };
 
   // Create open file input
   var openFileInput = document.createElement("input");
   openFileInput.type = "file";
   openFileInput.multiple = false;
+  openFileInput.name = "data";
   openFileInput.id = "upload-select";
   document.getElementById(element).appendChild(openFileInput);
     
@@ -556,7 +507,13 @@ function createFileUploader(element, fileTree)
   var uploadButton = document.createElement("button");
   uploadButton.innerHTML = 'Upload';
   document.getElementById(element).appendChild(uploadButton);
-
+  
+  // Register click handler for refresh button
+  refreshButton.onclick = function(e)
+  {
+    fileTree.refreshPath();
+  };
+  
   // Register click handler for upload button
   uploadButton.onclick = function(e)
   {
@@ -576,7 +533,7 @@ function createFileUploader(element, fileTree)
     filename = "/" + filename + "." + ext;
     
     var formData = new FormData();
-    formData.append("path", openFileInput.files[0], filename);
+    formData.append("data", openFileInput.files[0], filename);
     requests.add("POST", "/edit", formData, httpPostProcessRequest);
     
     var uploadSelect = document.getElementById("upload-select");
@@ -594,12 +551,6 @@ function createFileUploader(element, fileTree)
       fileTree.refreshPath();
     }
   };
-  
-  // Create info text
-  var infoText = document.createElement("span");
-  infoText.className = "infoText";
-  infoText.innerHTML = 'Use context menu for deleting or downloading files.';
-  document.getElementById(element).appendChild(infoText);
 }
 
 function onBodyLoad()
@@ -619,7 +570,7 @@ function onBodyLoad()
     <div id="systeminfo">
       <p>System Info:</p>
       <br>
-      <iframe id="systeminfoFrame" src="/systeminfo"></iframe>
+      <iframe id="systeminfoFrame" src="/edit?systeminfo"></iframe>
     </div>
     <iframe id="download-frame" style='display:none;'></iframe>
   </body>

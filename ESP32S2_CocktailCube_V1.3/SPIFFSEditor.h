@@ -5,7 +5,7 @@
  * @date      2025/01/01
  * @copyright © 2025 Florian Stäblein
  */
-
+ 
 #ifndef SPIFFSEDITOR_H
 #define SPIFFSEDITOR_H
 
@@ -14,33 +14,35 @@
 //===============================================================
 #include <Arduino.h>
 #include <SPIFFS.h>
-#include <WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include "SystemHelper.h"
-#include "WifiHandler.h"
 
 //===============================================================
 // SPIFFS editor class
 //===============================================================
-class SPIFFSEditor: public RequestHandler
+class SPIFFSEditor: public AsyncWebHandler
 {
   public:
     // Constructor
     SPIFFSEditor();
 
     // Returns true, if the handler can handle the request
-    bool canHandle(WebServer &server, HTTPMethod method, const String &uri) override final;
-
-    // Returns true if the handler can upload the file
-    bool canRaw(WebServer &server, const String &uri) override final;
-
-    // Handles the request
-    bool handle(WebServer &server, HTTPMethod method, const String &requestUri) override final;
+    bool canHandle(AsyncWebServerRequest* request) const override final;
     
-    // Handles the raw upload
-    void raw(WebServer &server, const String &requestUri, HTTPRaw &raw) override final;
-  
+    // Handles the request
+    void handleRequest(AsyncWebServerRequest* request) override final;
+    
+    // Handles the upload
+    void handleUpload(AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final) override final;
+    
+    // Returns false
+    bool isRequestHandlerTrivial() const override final
+    {
+      return false;
+    }
+    
   private:
-    File _fsUploadFile;
+    uint32_t _startTime;
 };
 
 #endif
