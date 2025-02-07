@@ -16,8 +16,6 @@
 //===============================================================
 static const char* TAG = "wifihandler";
 
-#if defined(WIFI_MIXER)
-
 //===============================================================
 // Global variables
 //===============================================================
@@ -26,10 +24,10 @@ WifiHandler Wifihandler;
 //===============================================================
 // Will be called if an web socket event occours
 //===============================================================
-void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len)
+/*void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len)
 {
   Wifihandler.OnWebsocketEvent(server, client, type, arg, data, len);
-}
+}*/
 
 //===============================================================
 // Constructor
@@ -133,22 +131,14 @@ void WifiHandler::SetWifiMode(wifi_mode_t mode)
     WiFi.softAPConfig(local_ip, gateway, subnet);
     delay(100);
 
-    // Check for first call
-    if (!_serverInitDone)
-    {
-      // Start web server
-      _serverInitDone = StartWebServer();
-
-      // Set internal wifi mode if success
-      _wifiMode = _serverInitDone ? WIFI_MODE_AP : WIFI_MODE_NULL;
-    }
-    else
-    {
-      _wifiMode = WIFI_MODE_AP;
-    }
+    // Start web server
+    _wifiMode = StartWebServer();
   }
   else
   {
+    // Stop web server
+    StopWebServer();
+
     // Deactivate Accesspoint and Wifi
     ESP_LOGI(TAG, "Deactivate Accesspoint and Wifi");
     WiFi.softAPdisconnect(true);
@@ -171,13 +161,13 @@ uint16_t WifiHandler::GetConnectedClients()
 //===============================================================
 void WifiHandler::UpdateCycleTimespanToClients(uint32_t clientID)
 {
-  if (_webevents == NULL)
+  /*if (_webevents == NULL)
   {
     return;
   }
 
   uint32_t cycleTimepan_ms = Pumps.GetCycleTimespan();
-  _webevents->send((String(clientID) + ":" + String(cycleTimepan_ms)).c_str(), "CYCLE_TIMESPAN");
+  _webevents->send((String(clientID) + ":" + String(cycleTimepan_ms)).c_str(), "CYCLE_TIMESPAN");*/
 }
 
 //===============================================================
@@ -185,7 +175,7 @@ void WifiHandler::UpdateCycleTimespanToClients(uint32_t clientID)
 //===============================================================
 void WifiHandler::UpdateLiquidAnglesToClients(uint32_t clientID)
 {
-  if (!_webevents)
+  /*if (!_webevents)
   {
     return;
   }
@@ -195,7 +185,7 @@ void WifiHandler::UpdateLiquidAnglesToClients(uint32_t clientID)
   int16_t angle3 = Statemachine.GetAngle(eLiquid3);
 
   // Send events from variables to all connected websockets
-  _webevents->send((String(clientID) + ":" + String(angle1) + "," + String(angle2)  + "," + String(angle3)).c_str(), "LIQUID_ANGLES");
+  _webevents->send((String(clientID) + ":" + String(angle1) + "," + String(angle2)  + "," + String(angle3)).c_str(), "LIQUID_ANGLES");*/
 }
 
 //===============================================================
@@ -203,6 +193,12 @@ void WifiHandler::UpdateLiquidAnglesToClients(uint32_t clientID)
 //===============================================================
 void WifiHandler::Update()
 {
+  if (_webserver)
+  {
+    _webserver->handleClient();
+  }
+
+/*
   if (_websocket)
   {
     // Clean websocket clients
@@ -218,13 +214,13 @@ void WifiHandler::Update()
       UpdateLiquidAnglesToClients(0); // Use liquid angles instead (long time sync and alive in once)
       _lastAlive_ms = millis();
     }
-  }
+  }*/
 }
 
 //===============================================================
 // Will be called if an web socket event occours
 //===============================================================
-void WifiHandler::OnWebsocketEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len)
+/*void WifiHandler::OnWebsocketEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len)
 {
   // Client connected
   if (type == WS_EVT_CONNECT)
@@ -313,12 +309,12 @@ void WifiHandler::OnWebsocketEvent(AsyncWebSocket* server, AsyncWebSocketClient*
       }
     }
   }
-}
+}*/
 
 //===============================================================
 // Starts the web server
 //===============================================================
-bool WifiHandler::StartWebServer()
+wifi_mode_t WifiHandler::StartWebServer()
 {
   ESP_LOGI(TAG, "Start web server");
 
@@ -328,21 +324,21 @@ bool WifiHandler::StartWebServer()
   mdnsName.toLowerCase();
   mdnsName.trim();
   MDNS.begin(mdnsName);
-
+  
   // Create web server
   ESP_LOGI(TAG, "Create web server");
-  _webserver = new AsyncWebServer(80);
+  _webserver = new WebServer(80);
   if (!_webserver)
   {
-    return false;
+    return WIFI_MODE_NULL;
   }
-
+/*
   // Create web socket
   ESP_LOGI(TAG, "Create web socket");
   _websocket = new AsyncWebSocket("/websocket");
   if (!_websocket)
   {
-    return false;
+    return WIFI_MODE_NULL;
   }
 
   // Create web events
@@ -350,37 +346,56 @@ bool WifiHandler::StartWebServer()
   _webevents = new AsyncEventSource("/events");
   if (!_webevents)
   {
-    return false;
+    return WIFI_MODE_NULL;
   }
-  
+*/
+
   // Add root URL handler to web server
   ESP_LOGI(TAG, "Add root URL handler");
-  _webserver->on("/", HTTP_GET, [](AsyncWebServerRequest * request)
+  _webserver->on("/", HTTP_GET, [this]()
   {
-    request->send(SPIFFS, "/index.html", "text/html");
+    _webserver->sendHeader("Location", "/index.html", true);
+    _webserver->send(302);
   });
 
-  // Add system info URL handler to web server
-  ESP_LOGI(TAG, "Add system info URL handler");
-  _webserver->on("/systeminfo", HTTP_GET, [](AsyncWebServerRequest * request)
+  // Add system info handler to web server
+  ESP_LOGI(TAG, "Add system info handler");
+  _webserver->on("/systeminfo", HTTP_GET, [this]()
   {
-    request->send(200, "text/plain", Systemhelper.GetSystemInfoString());
+    _webserver->sendHeader("Cache-Control", "no-cache");
+    _webserver->send(200, "text/plain; charset=utf-8", Systemhelper.GetSystemInfoString());
   });
 
+  // Add format SPIFFS handler to web server
+  ESP_LOGI(TAG, "Add format SPIFFS handler");
+  _webserver->on("/format", HTTP_GET, [this]()
+  {
+    SPIFFS.end();
+    SPIFFS.format();
+    _webserver->send(200, "text/plain; charset=utf-8", "FORMAT: SPIFFS sucessfully formatted. Restarting ESP...");
+    delay(2000);
+    ESP.restart();
+  });
+  
   // Add SPIFFS handler to web server
   ESP_LOGI(TAG, "Add SPIFFS handler");
   _webserver->addHandler(new SPIFFSEditor());
+  
+  // Add static files handler to web server
+  ESP_LOGI(TAG, "Add static files handler");
+  _webserver->serveStatic("/", SPIFFS, "/");
 
   // Add not found handler to web server
   ESP_LOGI(TAG, "Add not found handler");
-  _webserver->onNotFound([](AsyncWebServerRequest *request)
+  _webserver->onNotFound([this]()
   {
     String mixerName = config.mixerName;
     mixerName.toLowerCase();
     mixerName.trim();
-    request->send(404, "text/plain", "Sorry, page not found! Go to 'http://" + mixerName + ".local' or 'http://192.168.1.1/'");
+    _webserver->send(404, "text/plain; charset=utf-8", "Sorry, page not found! Go to 'http://" + mixerName + ".local' or 'http://192.168.1.1/'. If you want to upload files use '/edit' as sub page.");
   });
 
+/*
   // Add websocket handler to web server
   ESP_LOGI(TAG, "Add websocket handler");
   _websocket->onEvent(onWsEvent);
@@ -389,11 +404,8 @@ bool WifiHandler::StartWebServer()
   // Add event handler to web server
   ESP_LOGI(TAG, "Add event handler");
   _webserver->addHandler(_webevents);
+*/
 
-  // Add static files handler to web server
-  ESP_LOGI(TAG, "Add static files handler");
-  _webserver->serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
-  
   // Start web server
   ESP_LOGI(TAG, "Start web server");
   _webserver->begin();
@@ -402,13 +414,27 @@ bool WifiHandler::StartWebServer()
   ESP_LOGI(TAG, "Add service to MDNS");
   MDNS.addService("http", "tcp", 80);
 
-  return true;
+  return WIFI_MODE_AP;
+}
+
+//===============================================================
+// Stops the web server
+//===============================================================
+void WifiHandler::StopWebServer()
+{
+  // Stop web server
+  ESP_LOGI(TAG, "Stop web server");
+  _webserver->stop();
+
+  // Set web server to null
+  ESP_LOGI(TAG, "Set web server to null");
+  _webserver = NULL;
 }
 
 //===============================================================
 // Updates all settings in given client
 //===============================================================
-void WifiHandler::UpdateSettingsToClient(AsyncWebSocketClient* client)
+/*void WifiHandler::UpdateSettingsToClient(AsyncWebSocketClient* client)
 {
   if (!client)
   {
@@ -426,6 +452,4 @@ void WifiHandler::UpdateSettingsToClient(AsyncWebSocketClient* client)
   client->printf("LIQUID_COLORS:%s,%s,%s", config.wifiColorLiquid1.c_str(), config.wifiColorLiquid2.c_str(), config.wifiColorLiquid3.c_str());
   client->printf("LIQUID_ANGLES:%s,%s,%s", String(angle1).c_str(), String(angle2).c_str(), String(angle3).c_str());
   client->printf("CYCLE_TIMESPAN:%s", String(cycleTimepan_ms).c_str());
-}
-
-#endif
+}*/

@@ -17,15 +17,13 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
 #include <ESPmDNS.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
+#include <WebServer.h>
 #include <SPIFFSEditor.h>
 #include <esp_log.h>
 #include "Config.h"
 #include "SystemHelper.h"
 #include "StateMachine.h"
 
-#if defined(WIFI_MIXER)
 //===============================================================
 // Defines
 //===============================================================
@@ -67,15 +65,17 @@ class WifiHandler
     // Updates the web server and clients
     void Update();
 
+    // Returns the internal websever (only internal use)
+    WebServer* GetWebServer() { return _webserver; }
+
     // Will be called if an web socket event occours (only internal use)
-    void OnWebsocketEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
+    //void OnWebsocketEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
 
   private:
     // Preferences variable
     Preferences _preferences;
     
     // Wifi settings
-    bool _serverInitDone = false;
     wifi_mode_t _initWifiMode = WIFI_MODE_NULL;
     wifi_mode_t _wifiMode = WIFI_MODE_NULL;
 
@@ -84,18 +84,21 @@ class WifiHandler
     const char* _password = "";
 
     // Web server variables
-    AsyncWebServer* _webserver;
-    AsyncWebSocket* _websocket;
-    AsyncEventSource* _webevents;
+    WebServer* _webserver;
+    //AsyncWebSocket* _websocket;
+    //AsyncEventSource* _webevents;
 
     // Alive counter variable
     uint32_t _lastAlive_ms = 0;
 
     // Starts the web server
-    bool StartWebServer();
+    wifi_mode_t StartWebServer();
+
+    // Stops the web server
+    void StopWebServer();
 
     // Updates all settings in given client
-    void UpdateSettingsToClient(AsyncWebSocketClient* client);
+    //void UpdateSettingsToClient(AsyncWebSocketClient* client);
 };
 
 //===============================================================
@@ -103,5 +106,4 @@ class WifiHandler
 //===============================================================
 extern WifiHandler Wifihandler;
 
-#endif
 #endif
