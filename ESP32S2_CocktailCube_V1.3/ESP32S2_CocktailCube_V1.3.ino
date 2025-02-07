@@ -306,11 +306,9 @@ void setup(void)
     delay(1);
   }
 
-#if defined(WIFI_MIXER)
   // Initialize wifi
   ESP_LOGI(TAG, "Initialize wifi");
   Wifihandler.Begin();
-#endif
 
   // Initial run of state machine with entry event
   ESP_LOGI(TAG, "Initial run of state machine");
@@ -367,11 +365,9 @@ void loop()
   // Save flow meter values to flash if requested
   FlowMeter.SaveAsync();
 
-#if defined(WIFI_MIXER)
   // Run statemachine with main task event
   Statemachine.Execute(eMain);
 
   // Update wifi, webserver and clients
   Wifihandler.Update();
-#endif
 }

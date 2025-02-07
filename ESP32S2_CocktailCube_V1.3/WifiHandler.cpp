@@ -16,8 +16,6 @@
 //===============================================================
 static const char* TAG = "wifihandler";
 
-#if defined(WIFI_MIXER)
-
 //===============================================================
 // Global variables
 //===============================================================
@@ -428,4 +426,3 @@ void WifiHandler::UpdateSettingsToClient(AsyncWebSocketClient* client)
   client->printf("CYCLE_TIMESPAN:%s", String(cycleTimepan_ms).c_str());
 }
 
-#endif

@@ -503,14 +503,11 @@ void DisplayDriver::DrawHeader(const String &text, bool withIcons)
 
   if (withIcons)
   {
-#if defined(WIFI_MIXER)
     // Draw wifi icons
     DrawWifiIcons(true);
-#endif
   }
 }
 
-#if defined(WIFI_MIXER)
 //===============================================================
 // Draws the Wifi icon
 //===============================================================
@@ -553,7 +550,6 @@ void DisplayDriver::DrawWifiIcons(bool isfullUpdate)
     _tft->print(connectedClients);
   }
 }
-#endif
 
 //===============================================================
 // Draws the info box
@@ -1019,7 +1015,6 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
     _lastDraw_cycleTimespan_ms = cycleTimespan_ms;
   }
 
-#if defined(WIFI_MIXER)
   wifi_mode_t wifiMode = Wifihandler.GetWifiMode();
 
   // Move to next line
@@ -1046,7 +1041,6 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
     
     _lastDraw_wifiMode = wifiMode;
   }
-#endif
 }
 
 //===============================================================
