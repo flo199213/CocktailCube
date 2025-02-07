@@ -320,9 +320,6 @@ void setup(void)
   ESP_LOGI(TAG, "Initialize interrupt for dispenser lever");
   attachInterrupt(digitalPinToInterrupt(PIN_PUMPS_ENABLE), ISR_Pumps_Enable, CHANGE);
 
-  // Start main task
-  ESP_LOGI(TAG, "Start main task");
-  BaseType_t xReturned = xTaskCreate(Main_Task, "Main_Task", 4096, NULL, 10, &mainTaskHandle);
   // Final output
   ESP_LOGI(TAG, "Setup Finished");
 }
