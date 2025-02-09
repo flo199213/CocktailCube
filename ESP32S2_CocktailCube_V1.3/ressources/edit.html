@@ -4,10 +4,19 @@
   <head>
     <meta charset="UTF-8">
     <title>ESP Editor</title>
-    <meta name="description" content="Cocktailmixer SPIFFS Editor - Copyright © 2024 Florian Stäblein">
+    <meta name="description" content="Cocktailmixer SPIFFS Editor - Copyright © 2025 Florian Stäblein">
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi"/>
     
     <style type="text/css" media="screen">
+
+.infoText
+{
+  color: #969696;
+  padding-left: 10px;
+  font-size: 12px;
+  font-family: Verdana, Arial, Sans-serif;
+}
+	
 .contextMenu
 {
   z-index: 300;
@@ -83,9 +92,10 @@
   user-select: none;
   color: #444;
   line-height: 16px;
+  display: flex;
 }
 
-.tvu span
+.leafName
 {
   margin-bottom:5px;
   padding: 0 0 0 18px;
@@ -97,7 +107,16 @@
   background-position: 0px 0px;
 }
 
-.tvu span:hover
+.leafSize
+{
+  margin-bottom:5px;
+  padding: 0 0 0 18px;
+  display: inline-block;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.leafName:hover
 {
   text-decoration: underline;
 }
@@ -215,7 +234,6 @@ function sortByKey(array, key)
   });
 }
 
-
 var QueuedRequester = function ()
 {
   this.queue = [];
@@ -242,7 +260,8 @@ QueuedRequester.prototype =
       {
         if (x.readyState == 4)
         {
-         document.getElementById("loader").style.display = "none";
+          // Hide loader element
+          document.getElementById("loader").style.display = "none";
           d.callback(x.status, x.responseText);
           
           if (that.queue.length === 0)
@@ -257,6 +276,7 @@ QueuedRequester.prototype =
       }
     }
 
+    // Show loader element
     document.getElementById("loader").style.display = "block";
     
     var p = "";
@@ -322,17 +342,20 @@ QueuedRequester.prototype =
 
 var requests = new QueuedRequester();
 
+// Method for creating the file tree element
 function createFileTree(element)
 {
   var treeRoot = document.createElement("div");
   treeRoot.className = "tvu";
   document.getElementById(element).appendChild(treeRoot);
 
+  // Download function
   function loadDownload(path)
   {
     document.getElementById('download-frame').src = "/edit?download=" + path;
   }
 
+  // Fills the context menu
   function fillFileMenu(element, path)
   {
     var list = document.createElement("ul");
@@ -348,7 +371,10 @@ function createFileTree(element)
     // Register click handler for download file context menu entry
     downloadFile.onclick = function(e)
     {
+      // Start download
       loadDownload(path);
+	  
+      // Remove context menu
       if (document.body.getElementsByClassName('contextMenu').length > 0)
       {
         document.body.removeChild(element);
@@ -363,18 +389,22 @@ function createFileTree(element)
     // Register click handler for delete file context menu entry
     deleteFile.onclick = function(e)
     {
+      // Delete file
       httpDelete(path);
+	  
+      // Remove context menu
       if (document.body.getElementsByClassName('contextMenu').length > 0)
       {
         document.body.removeChild(element);
       }
     };
   }
-
+  
+  // Shows the contect menu
   function showContextMenu(event, path)
   {
     // Create new div
-    var divContext =document.createElement("div");
+    var divContext = document.createElement("div");
     var scrollTop = document.body.scrollTop ? document.body.scrollTop : document.documentElement.scrollTop;
     var scrollLeft = document.body.scrollLeft ? document.body.scrollLeft : document.documentElement.scrollLeft;
     var left = event.clientX + scrollLeft;
@@ -405,11 +435,15 @@ function createFileTree(element)
     };
   }
 
-  function createTreeLeaf(path, name, size)
+  // Creates a tree leaf with the file name
+  function createTreeLeafName(path, name)
   {
     var leaf = document.createElement("li");
     leaf.id = path + name;
+	
+    // Create the span for the name
     var label = document.createElement("span");
+	  label.className = "leafName";
     label.innerHTML = name;
     leaf.appendChild(label);
     
@@ -419,29 +453,54 @@ function createFileTree(element)
       e.stopPropagation();
       showContextMenu(e, leaf.id);
     };
+	
+    return leaf;
+  }
+  
+  // Creates a tree leaf with the file size
+  function createTreeLeafSize(path, size)
+  {
+    var leaf = document.createElement("li");
+		
+    // Create the span for the size
+    var label = document.createElement("span");
+    label.className = "leafSize";
+    label.innerHTML = "(Size: " + size / 1000.0 + "kB)";
+    leaf.appendChild(label);	
+	
     return leaf;
   }
 
+  // Adds a tree leaf to the file tree
   function addList(parent, path, items)
   {
     sortByKey(items, 'name');
     
     var list = document.createElement("ul");
+    var sizes = document.createElement("ul");
     parent.appendChild(list);
+    parent.appendChild(sizes);
     
     var ll = items.length;
     for (var index = 0; index < ll; index++)
     {
       if (items[index].type === "file")
       {
-        list.appendChild(createTreeLeaf(path, items[index].name, items[index].size));
+        list.appendChild(createTreeLeafName(path, items[index].name));
+        sizes.appendChild(createTreeLeafSize(path, items[index].size));
       }
     }
   }
 
   this.refreshPath = function()
   {
-    treeRoot.removeChild(treeRoot.childNodes[0]);
+    // Remove all file entrys
+    while (treeRoot.firstChild)
+    {
+	  treeRoot.removeChild(treeRoot.firstChild);
+    }
+	
+    // Get new file list
     httpGet(treeRoot, "/");
   };
 
@@ -450,30 +509,31 @@ function createFileTree(element)
   {
     var formData = new FormData();
     formData.append("path", filename);
-    requests.add("DELETE", "/edit", formData, delCb());
+    requests.add("DELETE", "/edit", formData, httpPostProcessRequest_Delete());
   }
-  function delCb()
+  
+  // After DELETE handler
+  function httpPostProcessRequest_Delete()
   {
     return function(status, responseText)
     {
       if (status != 200)
       {
-        alert("ERROR[" + status + "]: " + responseText);
+        alert("ERROR[ HTTP Code = " + status + " ]: " + responseText);
       }
-      else
-      {
-        treeRoot.removeChild(treeRoot.childNodes[0]);
-        httpGet(treeRoot, "/");
-      }
+	  
+	  refreshPath();
     }
   }
 
   // Method for http get
   function httpGet(parent, path)
   {
-    requests.add("GET", "/edit", { list: path }, getCb(parent, path));
+    requests.add("GET", "/edit", { list: path }, httpPostProcessRequest_GET(parent, path));
   }
-  function getCb(parent, path)
+  
+  // After GET handler
+  function httpPostProcessRequest_GET(parent, path)
   {
     return function(status, responseText)
     {
@@ -484,22 +544,28 @@ function createFileTree(element)
     }
   }
 
+  // Finally run http get 'list' of root '/'
   httpGet(treeRoot, "/");
   return this;
 }
 
 function createFileUploader(element, fileTree)
-{  
+{
   // Create refresh button
   var refreshButton = document.createElement("button");
   refreshButton.innerHTML = 'Refresh List';
   document.getElementById(element).appendChild(refreshButton);
+  
+  // Register click handler for refresh button
+  refreshButton.onclick = function(e)
+  {
+    fileTree.refreshPath();
+  };
 
   // Create open file input
   var openFileInput = document.createElement("input");
   openFileInput.type = "file";
   openFileInput.multiple = false;
-  openFileInput.name = "data";
   openFileInput.id = "upload-select";
   document.getElementById(element).appendChild(openFileInput);
     
@@ -507,13 +573,7 @@ function createFileUploader(element, fileTree)
   var uploadButton = document.createElement("button");
   uploadButton.innerHTML = 'Upload';
   document.getElementById(element).appendChild(uploadButton);
-  
-  // Register click handler for refresh button
-  refreshButton.onclick = function(e)
-  {
-    fileTree.refreshPath();
-  };
-  
+
   // Register click handler for upload button
   uploadButton.onclick = function(e)
   {
@@ -522,35 +582,41 @@ function createFileUploader(element, fileTree)
       return;
     }
     
+    // Get upload file name
     var filename = openFileInput.files[0].name;
     var ext = /(?:\.([^.]+))?$/.exec(filename)[1];
     var name = /(.*)\.[^.]+$/.exec(filename)[1];
-    
     if (typeof name !== undefined)
     {
       filename = name;
     }
     filename = "/" + filename + "." + ext;
     
+    // Generate upload form data
     var formData = new FormData();
-    formData.append("data", openFileInput.files[0], filename);
-    requests.add("POST", "/edit", formData, httpPostProcessRequest);
+    formData.append("path", openFileInput.files[0], filename);
+    requests.add("POST", "/edit", formData, httpPostProcessRequest_Upload);
     
+    // Reset selected upload file
     var uploadSelect = document.getElementById("upload-select");
     uploadSelect.value = "";
   };
   
-  function httpPostProcessRequest(status, responseText)
+  // After POST (upload) handler
+  function httpPostProcessRequest_Upload(status, responseText)
   {
     if (status != 200)
     {
-      alert("ERROR[" + status + "]: " + responseText);
+      alert("ERROR[ HTTP Code = " + status + " ]: " + responseText);
     }
-    else
-    {
-      fileTree.refreshPath();
-    }
+    fileTree.refreshPath();
   };
+  
+  // Create info text
+  var infoText = document.createElement("span");
+  infoText.className = "infoText";
+  infoText.innerHTML = 'Use context menu for deleting or downloading files.';
+  document.getElementById(element).appendChild(infoText);
 }
 
 function onBodyLoad()
@@ -561,6 +627,7 @@ function onBodyLoad()
   // Create uploader menu strip
   createFileUploader("uploaderMenuStrip", fileTree);
 };
+
     </script>
   </head>
   <body onload="onBodyLoad();">
@@ -570,7 +637,7 @@ function onBodyLoad()
     <div id="systeminfo">
       <p>System Info:</p>
       <br>
-      <iframe id="systeminfoFrame" src="/edit?systeminfo"></iframe>
+      <iframe id="systeminfoFrame" src="/systeminfo"></iframe>
     </div>
     <iframe id="download-frame" style='display:none;'></iframe>
   </body>

@@ -67,34 +67,34 @@ void DisplayDriver::LoadImages()
   ESP_LOGI(TAG, "Begin loading images");
 
   // Load startup image to RAM: Logo
-  _imageLogo = new SPIFFSFLOImage();
+  _imageLogo = new SPIFFSImage();
   ImageReturnCode returnCode = _imageLogo->Allocate(config.imageLogo);
   ESP_LOGI(TAG, "Load image 'Logo': %s (Heap: %d / %d Bytes)", _imageLogo->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
 
   // Load startup image to RAM: Glass
-  _imageGlass = new SPIFFSFLOImage();
+  _imageGlass = new SPIFFSImage();
   returnCode = _imageGlass->Allocate(config.imageGlass);
   ESP_LOGI(TAG, "Load image 'Glass': %s (Heap: %d / %d Bytes)", _imageGlass->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
 
   // Load startup images to RAM: Bottle 1
-  _imageBottle1 = new SPIFFSFLOImage();
+  _imageBottle1 = new SPIFFSImage();
   returnCode = _imageBottle1->Allocate(config.imageBottle1);
   ESP_LOGI(TAG, "Load image 'Bottle 1': %s (Heap: %d / %d Bytes)", _imageBottle1->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
 
   if (!config.isMixer)
   {
     // Load startup images to RAM: Bottle 2
-    _imageBottle2 = new SPIFFSFLOImage();
+    _imageBottle2 = new SPIFFSImage();
     returnCode = _imageBottle2->Allocate(config.imageBottle2);
     ESP_LOGI(TAG, "Load image 'Bottle 2': %s (Heap: %d / %d Bytes)", _imageBottle2->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
     
     // Load startup images to RAM: Bottle 3
-    _imageBottle3 = new SPIFFSFLOImage();
+    _imageBottle3 = new SPIFFSImage();
     returnCode = _imageBottle3->Allocate(config.imageBottle3);
     ESP_LOGI(TAG, "Load image 'Bottle 3': %s (Heap: %d / %d Bytes)", _imageBottle3->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
     
     // Load startup images to RAM: Bottle 4
-    _imageBottle4 = new SPIFFSFLOImage();
+    _imageBottle4 = new SPIFFSImage();
     returnCode = _imageBottle4->Allocate(config.imageBottle4);
     ESP_LOGI(TAG, "Load image 'Bottle 4': %s (Heap: %d / %d Bytes)", _imageBottle4->PrintStatus(returnCode).c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
   }
@@ -1265,8 +1265,8 @@ void DisplayDriver::ClearBarBottle(BarBottle lastDraw_barBottle, BarBottle barBo
   }
 
   // Determine image pointers
-  SPIFFSFLOImage* barBottlePointerLast = GetBarBottlePointer(lastDraw_barBottle);
-  SPIFFSFLOImage* barBottlePointerNew = GetBarBottlePointer(barBottle);
+  SPIFFSImage* barBottlePointerLast = GetBarBottlePointer(lastDraw_barBottle);
+  SPIFFSImage* barBottlePointerNew = GetBarBottlePointer(barBottle);
 
   if (barBottlePointerLast &&
     barBottlePointerNew &&
@@ -1286,7 +1286,7 @@ void DisplayDriver::ClearBarBottle(BarBottle lastDraw_barBottle, BarBottle barBo
 void DisplayDriver::DrawBarBottle(BarBottle barBottle, int16_t x0, int16_t y)
 {  
   // Determine correct pointer
-  SPIFFSFLOImage* barBottlePointer = GetBarBottlePointer(barBottle);
+  SPIFFSImage* barBottlePointer = GetBarBottlePointer(barBottle);
 
   if (barBottlePointer &&
     barBottlePointer->IsValid())
@@ -1303,7 +1303,7 @@ void DisplayDriver::DrawBarBottle(BarBottle barBottle, int16_t x0, int16_t y)
 void DisplayDriver::SelectBarBottle(BarBottle barBottle, int16_t x0, int16_t y, uint16_t color)
 {
   // Determine correct pointer
-  SPIFFSFLOImage* barBottlePointer = GetBarBottlePointer(barBottle);
+  SPIFFSImage* barBottlePointer = GetBarBottlePointer(barBottle);
 
   if (barBottlePointer &&
     barBottlePointer->IsValid())
@@ -1320,7 +1320,7 @@ void DisplayDriver::SelectBarBottle(BarBottle barBottle, int16_t x0, int16_t y, 
 //===============================================================
 // Returns a pointer to the requested bar bottle image
 //===============================================================
-SPIFFSFLOImage* DisplayDriver::GetBarBottlePointer(BarBottle barBottle)
+SPIFFSImage* DisplayDriver::GetBarBottlePointer(BarBottle barBottle)
 {
   switch (barBottle)
   {

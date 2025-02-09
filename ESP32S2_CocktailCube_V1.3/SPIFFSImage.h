@@ -6,8 +6,8 @@
  * @copyright © 2025 Florian Stäblein
  */
  
-#ifndef SPIFFSFLOIMAGE_H
-#define SPIFFSFLOIMAGE_H
+#ifndef SPIFFSIMAGE_H
+#define SPIFFSIMAGE_H
 
 //===============================================================
 // Inlcudes
@@ -48,16 +48,16 @@ struct FLOHeader
 };
 
 //===============================================================
-// SPIFFS FLO image class
+// SPIFFS image class
 //===============================================================
-class SPIFFSFLOImage
+class SPIFFSImage
 {
   public:
     // Constructor
-    SPIFFSFLOImage();
+    SPIFFSImage();
     
     // Destructor
-    ~SPIFFSFLOImage();
+    ~SPIFFSImage();
 
     // Allocates the internal buffer
     ImageReturnCode Allocate(String filename);
@@ -84,7 +84,7 @@ class SPIFFSFLOImage
     void Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor = 0, bool asShadow = false);
 
     // Clears the difference between two images
-    void ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, SPIFFSFLOImage* otherImage, Adafruit_SPITFT* tft, uint16_t clearColor);
+    void ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, SPIFFSImage* otherImage, Adafruit_SPITFT* tft, uint16_t clearColor);
 
     // Moves the image on the tft
     void Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_SPITFT* tft, uint16_t clearColor, bool onlyClear = false);
@@ -96,7 +96,7 @@ class SPIFFSFLOImage
     // File object for reading image data
     File _file;
 
-    // FLO settings
+    // Image settings header
     FLOHeader _header;
 
     // Buffer which stores the pixel data

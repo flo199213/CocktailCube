@@ -17,13 +17,12 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
 #include <ESPmDNS.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <SPIFFSEditor.h>
+#include <WebServer.h>
 #include <esp_log.h>
 #include "Config.h"
 #include "SystemHelper.h"
 #include "StateMachine.h"
+#include "SPIFFSEditor.h"
 
 //===============================================================
 // Defines
@@ -57,24 +56,17 @@ class WifiHandler
     // Returns the amount of connected clients
     uint16_t GetConnectedClients();
 
-    // Updates cycle timespan in connected clients
-    void UpdateCycleTimespanToClients(uint32_t clientID);
-
-    // Updates all liquid angles in connected clients
-    void UpdateLiquidAnglesToClients(uint32_t clientID);
-
     // Updates the web server and clients
     void Update();
 
-    // Will be called if an web socket event occours (only internal use)
-    void OnWebsocketEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
+    // Returns the internal websever (only internal use)
+    WebServer* GetWebServer() { return _webserver; }
 
   private:
     // Preferences variable
     Preferences _preferences;
     
     // Wifi settings
-    bool _serverInitDone = false;
     wifi_mode_t _initWifiMode = WIFI_MODE_NULL;
     wifi_mode_t _wifiMode = WIFI_MODE_NULL;
 
@@ -83,18 +75,16 @@ class WifiHandler
     const char* _password = "";
 
     // Web server variables
-    AsyncWebServer* _webserver;
-    AsyncWebSocket* _websocket;
-    AsyncEventSource* _webevents;
+    WebServer* _webserver;
 
     // Alive counter variable
     uint32_t _lastAlive_ms = 0;
 
     // Starts the web server
-    bool StartWebServer();
+    wifi_mode_t StartWebServer();
 
-    // Updates all settings in given client
-    void UpdateSettingsToClient(AsyncWebSocketClient* client);
+    // Stops the web server
+    void StopWebServer();
 };
 
 //===============================================================

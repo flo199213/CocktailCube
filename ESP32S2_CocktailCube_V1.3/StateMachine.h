@@ -40,15 +40,6 @@ class StateMachine
     // Initializes the state machine
     void Begin(uint8_t pinBuzzer);
 
-    // Updates cycle timespan value from wifi
-    bool UpdateValuesFromWifi(uint32_t clientID, uint32_t cycletimespan_ms);
-
-    // Updates non volatile values from wifi
-    bool UpdateValuesFromWifi(uint32_t clientID, bool save);
-
-    // Updates a liquid values from wifi
-    bool UpdateValuesFromWifi(uint32_t clientID, MixtureLiquid liquid, int16_t increments_Degrees);
-
     // Returns the angle for a given liquid
     int16_t GetAngle(MixtureLiquid liquid);
 
@@ -91,19 +82,6 @@ class StateMachine
     uint32_t _resetTimestamp = 0;
     const uint32_t ResetTime_ms = 2000;
 
-    // Wifi new liquid data variables
-    uint32_t _newLiquidClientID = 0;
-    MixtureLiquid _newLiquid = eLiquidNone;
-    int16_t _newLiquidIncrements_Degrees = 0;
-
-    // Wifi new cycle timespan data variables
-    uint32_t _newCycleTimespanClientID = 0;
-    bool _newCycleTimespan = false;
-    uint32_t _newCycleTimespan_ms = 0;
-
-    // Handles new wifi data, should be called in state machine
-    void HandleNewWifiData(MixerEvent event);
-
     // Function menu state
     void FctMenu(MixerEvent event);
 
@@ -129,7 +107,7 @@ class StateMachine
     void SetMixtureDefaults();
 
     // Updates all values in display, pumps driver and wifi
-    void UpdateValues(uint32_t clientID = 0);
+    void UpdateValues();
 };
 
 //===============================================================

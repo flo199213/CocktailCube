@@ -1,5 +1,5 @@
 /*
- * Includes a spiffs FLO image
+ * Includes a spiffs image
  *
  * @author    Florian Stäblein
  * @date      2025/01/01
@@ -9,24 +9,24 @@
 //===============================================================
 // Includes
 //===============================================================
-#include "SPIFFSFLOImage.h"
+#include "SPIFFSImage.h"
 
 //===============================================================
 // Constants
 //===============================================================
-static const char* TAG = "floimage";
+static const char* TAG = "spiffsimage";
 
 //===============================================================
 // Constructor
 //===============================================================
-SPIFFSFLOImage::SPIFFSFLOImage()
+SPIFFSImage::SPIFFSImage()
 {
 }
 
 //===============================================================
 // Destructor
 //===============================================================
-SPIFFSFLOImage::~SPIFFSFLOImage()
+SPIFFSImage::~SPIFFSImage()
 {
   Deallocate();
 }
@@ -34,7 +34,7 @@ SPIFFSFLOImage::~SPIFFSFLOImage()
 //===============================================================
 // Allocates the internal buffer
 //===============================================================
-ImageReturnCode SPIFFSFLOImage::Allocate(String filename)
+ImageReturnCode SPIFFSImage::Allocate(String filename)
 {
   ESP_LOGI(TAG, "Allocating new SPIFFS image '%s'", filename.c_str());
 
@@ -129,7 +129,7 @@ ImageReturnCode SPIFFSFLOImage::Allocate(String filename)
 //===============================================================
 // Deallocates the internal buffer
 //===============================================================
-void SPIFFSFLOImage::Deallocate()
+void SPIFFSImage::Deallocate()
 {
   // Remove valid fag
   _isValid = false;
@@ -154,7 +154,7 @@ void SPIFFSFLOImage::Deallocate()
 //===============================================================
 // Return a pixel at the requested position
 //===============================================================
-uint16_t SPIFFSFLOImage::GetPixel(int16_t x, int16_t y)
+uint16_t SPIFFSImage::GetPixel(int16_t x, int16_t y)
 {
   int16_t index = (y * _header.width + x) / 2;
   bool isHighNibble = (x % 2) == 0;
@@ -178,7 +178,7 @@ uint16_t SPIFFSFLOImage::GetPixel(int16_t x, int16_t y)
 //===============================================================
 // Draws the canvas on the tft
 //===============================================================
-void SPIFFSFLOImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor, bool asShadow)
+void SPIFFSImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor, bool asShadow)
 {
   if (!_buffer)
   {
@@ -204,7 +204,7 @@ void SPIFFSFLOImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t s
 //===============================================================
 // Clears the difference between two images
 //===============================================================
-void SPIFFSFLOImage::ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, SPIFFSFLOImage* otherImage, Adafruit_SPITFT* tft, uint16_t clearColor)
+void SPIFFSImage::ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, SPIFFSImage* otherImage, Adafruit_SPITFT* tft, uint16_t clearColor)
 {
   if (otherImage == NULL)
   {
@@ -247,7 +247,7 @@ void SPIFFSFLOImage::ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, S
 //===============================================================
 // Moves the canvas on the tft
 //===============================================================
-void SPIFFSFLOImage::Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_SPITFT* tft, uint16_t clearColor, bool onlyClear)
+void SPIFFSImage::Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_SPITFT* tft, uint16_t clearColor, bool onlyClear)
 {
   if (!_buffer)
   {
@@ -295,7 +295,7 @@ void SPIFFSFLOImage::Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafru
 //===============================================================
 // Print error code string to stream
 //===============================================================
-String SPIFFSFLOImage::PrintStatus(ImageReturnCode stat)
+String SPIFFSImage::PrintStatus(ImageReturnCode stat)
 {
   if (stat == IMAGE_SUCCESS)
   {
@@ -334,7 +334,7 @@ String SPIFFSFLOImage::PrintStatus(ImageReturnCode stat)
 // open File, converting if necessary to the microcontroller's
 // native endianism. (BMP files use little-endian values.)
 //===============================================================
-uint16_t SPIFFSFLOImage::ReadLE16(File* file)
+uint16_t SPIFFSImage::ReadLE16(File* file)
 {
   // Big-endian or unknown. Byte-by-byte read will perform reversal if needed.
   return file->read() | ((uint16_t)file->read() << 8);
@@ -345,7 +345,7 @@ uint16_t SPIFFSFLOImage::ReadLE16(File* file)
 // open File, converting if necessary to the microcontroller's
 // native endianism. (BMP files use little-endian values.)
 //===============================================================
-uint32_t SPIFFSFLOImage::ReadLE32(File* file)
+uint32_t SPIFFSImage::ReadLE32(File* file)
 {
   // Big-endian or unknown. Byte-by-byte read will perform reversal if needed.
   return file->read() | ((uint32_t)file->read() << 8) | ((uint32_t)file->read() << 16) | ((uint32_t)file->read() << 24);

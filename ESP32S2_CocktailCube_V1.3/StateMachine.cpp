@@ -50,69 +50,6 @@ void StateMachine::Begin(uint8_t pinBuzzer)
 }
 
 //===============================================================
-// Updates cycle timespan value from wifi
-//===============================================================
-bool StateMachine::UpdateValuesFromWifi(uint32_t clientID, uint32_t cycleTimespan_ms)
-{
-  // Check for min and max value
-  if (cycleTimespan_ms < MIN_CYCLE_TIMESPAN_MS ||
-    cycleTimespan_ms > MAX_CYCLE_TIMESPAN_MS)
-  {
-    return false;
-  }
-
-  // Check if ready for update
-  if (_newCycleTimespan)
-  {
-    return false;
-  }
-
-  // Signalize new data to state machine
-  _newCycleTimespanClientID = clientID;
-  _newCycleTimespan_ms = cycleTimespan_ms;
-  _newCycleTimespan = true;
-
-  return true;
-}
-
-//===============================================================
-// Updates non volatile values from wifi
-//===============================================================
-bool StateMachine::UpdateValuesFromWifi(uint32_t clientID, bool save)
-{
-  // Save cycle timespan value
-  Pumps.Save();
-
-  return true;
-}
-
-//===============================================================
-// Updates a liquid value from wifi
-//===============================================================
-bool StateMachine::UpdateValuesFromWifi(uint32_t clientID, MixtureLiquid liquid, int16_t increments_Degrees)
-{
-  // Check angle for 360 degrees increment or decrement max
-  if (increments_Degrees < -360 ||
-    increments_Degrees > 360)
-  {
-    return false;
-  }
-
-  // Check if ready for update
-  if (_newLiquid != eLiquidNone)
-  {
-    return false;
-  }
-
-  // Signalize new data to state machine
-  _newLiquidClientID = clientID;
-  _newLiquid = liquid;
-  _newLiquidIncrements_Degrees = increments_Degrees;
-
-  return true;
-}
-
-//===============================================================
 // Returns the angle for a given liquid
 //===============================================================
 int16_t StateMachine::GetAngle(MixtureLiquid liquid)
@@ -138,82 +75,6 @@ int16_t StateMachine::GetAngle(MixtureLiquid liquid)
 MixerState StateMachine::GetCurrentState()
 {
   return _currentState;
-}
-
-//===============================================================
-// Handles new wifi data, should be called in state machine
-//===============================================================
-void StateMachine::HandleNewWifiData(MixerEvent event)
-{
-  // General new wifi liquid data handler
-  if (_newLiquid != eLiquidNone)
-  {
-    // Save values for drawing
-    uint32_t newLiquidClientID = _newLiquidClientID;
-    MixtureLiquid newLiquid = _newLiquid;
-    int16_t newLiquidIcrements_Degrees = _newLiquidIncrements_Degrees;
-
-    // Reset wifi data
-    _newLiquidClientID = 0;
-    _newLiquid = eLiquidNone;
-    _newLiquidIncrements_Degrees = 0;
-
-    // Increment or decrement angle
-    switch (newLiquid)
-    {
-      case eLiquid1:
-        IncrementAngle(&_liquid1Angle_Degrees, _liquid2Angle_Degrees, _liquid3Angle_Degrees, newLiquidIcrements_Degrees);
-        break;
-      case eLiquid2:
-        IncrementAngle(&_liquid2Angle_Degrees, _liquid3Angle_Degrees, _liquid1Angle_Degrees, newLiquidIcrements_Degrees);
-        break;
-      case eLiquid3:
-        IncrementAngle(&_liquid3Angle_Degrees, _liquid1Angle_Degrees, _liquid2Angle_Degrees, newLiquidIcrements_Degrees);
-        break;
-      default:
-        break;
-    }
-
-    // Update display and pump values
-    UpdateValues(newLiquidClientID);
-
-    // Draw new values in dashboard mode and at main event
-    if (_currentState == eDashboard &&
-      event == eMain)
-    {
-      // Draw current value string and doughnut chart in partial updating mode
-      Display.DrawCurrentValues();
-      Display.DrawDoughnutChart3(newLiquidIcrements_Degrees > 0);
-    }
-  }
-
-  // General new wifi cycle timespan data handler 
-  if (_newCycleTimespan)
-  {
-    // Save values for drawing
-    uint32_t newCycleTimespanClientID = _newCycleTimespanClientID;
-    uint32_t newCycleTimespan_ms = _newCycleTimespan_ms;
-
-    // Reset wifi data flag
-    _newCycleTimespanClientID = 0;
-    _newCycleTimespan = false;
-    _newCycleTimespan_ms = 0;
-    
-    // Set cycle timespan value
-    if (Pumps.SetCycleTimespan(newCycleTimespan_ms))
-    {
-      // Update wifi clients
-      Wifihandler.UpdateCycleTimespanToClients(newCycleTimespanClientID);
-
-      // Draw new values in settings mode and at main event
-      if (_currentState == eSettings &&
-        event == eMain)
-      {
-        // Draw settings in partial update mode
-        Display.DrawSettings();
-      }
-    }
-  }
 }
 
 //===============================================================
@@ -311,9 +172,6 @@ void StateMachine::FctMenu(MixerEvent event)
 
         // Draw wifi icons
         Display.DrawWifiIcons();
-
-        // Check for new wifi data and handle it if required
-        HandleNewWifiData(event);
 
         // Check for button press
         if (EncoderButton.IsButtonPress())
@@ -596,9 +454,6 @@ void StateMachine::FctDashboard(MixerEvent event)
 
         // Draw wifi icons
         Display.DrawWifiIcons();
-
-        // Check for new wifi data and handle it if required
-        HandleNewWifiData(event);
         
         // Check for long button press
         if (EncoderButton.IsLongButtonPress())
@@ -679,9 +534,6 @@ void StateMachine::FctCleaning(MixerEvent event)
         
         // Draw wifi icons
         Display.DrawWifiIcons();
-
-        // Check for new wifi data and handle it if required
-        HandleNewWifiData(event);
         
         // Check for long button press
         if (EncoderButton.IsLongButtonPress())
@@ -742,10 +594,7 @@ void StateMachine::FctReset(MixerEvent event)
       }
       break;
     case eMain:
-      {
-        // Check for new wifi data and handle it if required
-        HandleNewWifiData(event);
-        
+      {        
         // Wait for the reset page display time
         if ((millis() - _resetTimestamp) > ResetTime_ms)
         {
@@ -946,9 +795,6 @@ void StateMachine::FctSettings(MixerEvent event)
           // Update cycle timespan
           Pumps.SetCycleTimespan(Pumps.GetCycleTimespan() + currentEncoderIncrements * 20);
           
-          // Update wifi clients (client ID = 0 -> no client)
-          Wifihandler.UpdateCycleTimespanToClients(0);
-          
           // Draw settings in partial update mode
           Display.DrawSettings();
         }
@@ -969,9 +815,6 @@ void StateMachine::FctSettings(MixerEvent event)
 
         // Draw wifi icons
         Display.DrawWifiIcons();
-
-        // Check for new wifi data and handle it if required
-        HandleNewWifiData(event);
 
         // Check for long button press
         if (EncoderButton.IsLongButtonPress())
@@ -1073,7 +916,7 @@ void StateMachine::SetMixtureDefaults()
 //===============================================================
 // Updates all values in display, pumps driver and wifi
 //===============================================================
-void StateMachine::UpdateValues(uint32_t clientID)
+void StateMachine::UpdateValues()
 {
   if (config.isMixer)
   {
@@ -1203,9 +1046,6 @@ void StateMachine::UpdateValues(uint32_t clientID)
       }
       break;
   }
-
-  // Update wifi clients
-  Wifihandler.UpdateLiquidAnglesToClients(clientID);
 }
 
 //===============================================================
