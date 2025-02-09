@@ -1,5 +1,5 @@
 /*
- * Includes a spiffs FLO image
+ * Includes a spiffs .flo image
  *
  * @author    Florian Stäblein
  * @date      2025/01/01
@@ -31,7 +31,7 @@ enum ImageReturnCode
   IMAGE_SUCCESS,            // Successful load
   IMAGE_ERR_FILE_NOT_FOUND, // Could not open file
   IMAGE_ERR_FORMAT,         // Not a supported image format
-  IMAGE_ERR_HEADER,         // Does not contain FLO header
+  IMAGE_ERR_HEADER,         // Does not contain image header
   IMAGE_ERR_TABLE,          // Does not contain color table
   IMAGE_ERR_MALLOC,         // Could not allocate image
   IMAGE_ERR_PIXELDATA       // Not enough pixel data read

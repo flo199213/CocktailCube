@@ -39,7 +39,7 @@ ImageReturnCode SPIFFSImage::Allocate(String filename)
   ESP_LOGI(TAG, "Allocating new SPIFFS image '%s'", filename.c_str());
 
   /*
-  FLO content overview:
+  .flo image content overview:
   --------------------------------------
   Header
     Width                (16 bit value)
@@ -72,7 +72,7 @@ ImageReturnCode SPIFFSImage::Allocate(String filename)
     return IMAGE_ERR_FILE_NOT_FOUND;
   }
 
-  // Parse FLO header and check signature
+  // Parse image header and check signature
   char signature[3];
   _file.readBytes(signature, 3);
   if (strncmp(signature, "FLO", 3) != 0)
@@ -109,7 +109,7 @@ ImageReturnCode SPIFFSImage::Allocate(String filename)
 
   // Set buffer to zero
   memset(_buffer, 0, pixelDataByteSize);
-  ESP_LOGI(TAG, "New FLO buffer allocated (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
+  ESP_LOGI(TAG, "New image buffer allocated (Heap: %d / %d Bytes)", ESP.getFreeHeap(), ESP.getHeapSize());
 
   // Read pixel data
   size_t pixelDataByteSizeRead = _file.read(_buffer, pixelDataByteSize);
@@ -147,7 +147,7 @@ void SPIFFSImage::Deallocate()
   if (_buffer)
   {
     free(_buffer);
-    ESP_LOGI(TAG, "FLO image buffer is free");
+    ESP_LOGI(TAG, "Image buffer is free");
   }
 }
 
@@ -307,11 +307,11 @@ String SPIFFSImage::PrintStatus(ImageReturnCode stat)
   }
   else if (stat == IMAGE_ERR_FORMAT)
   {
-    return String("Not a supported FLO variant.");
+    return String("Not a supported image variant.");
   }
   else if (stat == IMAGE_ERR_HEADER)
   {
-    return String("Does not contain FLO header.");
+    return String("Does not contain image header.");
   }
   else if (stat == IMAGE_ERR_TABLE)
   {
