@@ -1,7 +1,7 @@
 # CocktailCube
 Sourcecode for CocktailCube Devices powered by ESP32-S2 custom board (PCB)
 
-<img src="Images/PCB.jpg" width="300">
+<img src="Images/PCB.png" width="300">
 
 
 You can download the 3D print files required for the assembly from cults, printables or makerworld.
@@ -31,8 +31,8 @@ Releases (From previous project):
   - Statemachine / complete display menu
   <img src="Images/CocktailCube_NewModes_WithMenu.jpg" width="450">
 * V1.2 - Features:
-  - Wifi is now available! You can control the CocktailCube via access point. I will show a homepage under "\[mixername\].local". Additionally, you now can use the SPIFFS Uploader to upload the image and webpage files.
-  <img src="Images/CocktailCube_PageSmall.jpg" width="450">
+  - Wifi is now available! It will show the SPIFFS Uploader under "\[mixername\].local". You now can use the SPIFFS Uploader to upload the image files.
+  <img src="Images/Configpage.png" width="350">
   
 ___
 
