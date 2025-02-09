@@ -1,4 +1,4 @@
-/**
+/*
  * Includes all system helper functions
  *
  * @author    Florian Stäblein

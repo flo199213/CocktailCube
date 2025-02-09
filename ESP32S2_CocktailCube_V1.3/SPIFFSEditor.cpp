@@ -1,4 +1,4 @@
-/**
+/*
  * Includes all spiffs editor functions
  *
  * @author    Florian Stäblein

@@ -1,5 +1,4 @@
-#include "Arduino.h"
-/**
+/*
  * Includes a spiffs FLO image
  *
  * @author    Florian Stäblein

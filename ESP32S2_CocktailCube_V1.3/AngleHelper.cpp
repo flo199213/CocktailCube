@@ -1,4 +1,4 @@
-/**
+/*
  * Includes all angle functions
  *
  * @author    Florian Stäblein

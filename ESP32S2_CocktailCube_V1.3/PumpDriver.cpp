@@ -1,4 +1,4 @@
-/**
+/*
  * Includes pump driver functions
  *
  * @author    Florian Stäblein

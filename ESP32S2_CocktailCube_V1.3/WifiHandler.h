@@ -1,4 +1,4 @@
-/**
+/*
  * Includes all wifi functions
  *
  * @author    Florian Stäblein

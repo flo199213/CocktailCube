@@ -1,11 +1,11 @@
-/**
+/*
  * Includes all spiffs editor functions
  *
  * @author    Florian Stäblein
  * @date      2025/01/01
  * @copyright © 2025 Florian Stäblein
  */
- 
+
 #ifndef SPIFFSEDITOR_H
 #define SPIFFSEDITOR_H
 

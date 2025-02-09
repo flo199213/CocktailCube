@@ -1,4 +1,4 @@
-/**
+/*
  * CocktailCube main file
  *
  * @author    Florian Stäblein

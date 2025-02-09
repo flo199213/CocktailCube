@@ -1,4 +1,4 @@
-/**
+/*
  * Includes all encoder and button functions
  *
  * @author    Florian Stäblein

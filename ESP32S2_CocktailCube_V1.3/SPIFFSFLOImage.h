@@ -1,4 +1,4 @@
-/**
+/*
  * Includes a spiffs FLO image
  *
  * @author    Florian Stäblein
@@ -100,7 +100,7 @@ class SPIFFSFLOImage
     FLOHeader _header;
 
     // Buffer which stores the pixel data
-    uint8_t* _buffer;
+    uint8_t* _buffer = NULL;
 
     // True if the image is valid loaded
     bool _isValid = false;

@@ -1,4 +1,4 @@
-/**
+/*
  * Includes all display functions
  *
  * @author    Florian Stäblein

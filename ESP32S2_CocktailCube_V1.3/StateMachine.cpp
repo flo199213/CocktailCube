@@ -1,4 +1,4 @@
-/**
+/*
  * Includes all state machine functions
  *
  * @author    Florian Stäblein

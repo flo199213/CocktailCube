@@ -1,4 +1,4 @@
-/**
+/*
  * Includes all config defines
  *
  * @author    Florian Stäblein

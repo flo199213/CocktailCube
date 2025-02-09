@@ -1,4 +1,4 @@
-/**
+/*
  * Includes all flow meter functions
  *
  * @author    Florian Stäblein
