@@ -29,7 +29,7 @@ Releases (From previous project):
   - Initial Release
 * V1.1 - Features:
   - Statemachine / complete display menu
-  <img src="Images/CocktailCube_NewModes_WithMenu.jpg" width="450">
+  <img src="Images/CocktailCube_NewModes_WithMenu.jpg" width="350">
 * V1.2 - Features:
   - Wifi is now available! It will show the SPIFFS Uploader under "\[mixername\].local". You now can use the SPIFFS Uploader to upload the image files.
   <img src="Images/Configpage.png" width="350">
@@ -39,7 +39,7 @@ ___
 **Releases (Inital CocktailCube Release):**
 * V1.3 - Features:
   - The configuration now comes from a JSON configuration file, which prevents you from having to rebuild and upload the firmware every time you want to change the configuration. The Winebar was integrated as a variant in the same firmware.
-  <img src="Images/CocktailCube_ConfigFile.jpg" width="450">
+  <img src="Images/CocktailCube_ConfigFile.jpg" width="350">
 
 ___
 
