@@ -498,7 +498,7 @@ function createFileTree(element)
     // Remove all file entrys
     while (treeRoot.firstChild)
     {
-	  treeRoot.removeChild(treeRoot.firstChild);
+	    treeRoot.removeChild(treeRoot.firstChild);
     }
 	
     // Get new file list
@@ -523,7 +523,7 @@ function createFileTree(element)
         alert("ERROR[ HTTP Code = " + status + " ]: " + responseText);
       }
 	  
-	  refreshPath();
+      refreshPath();
     }
   }
 
@@ -531,6 +531,7 @@ function createFileTree(element)
   function httpGet(parent, path)
   {
     requests.add("GET", "/edit", { list: path }, httpPostProcessRequest_GET(parent, path));
+    document.getElementById("systeminfoFrame").contentDocument.location.reload(true);
   }
   
   // After GET handler
