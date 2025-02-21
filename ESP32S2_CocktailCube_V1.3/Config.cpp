@@ -61,7 +61,7 @@ void Configuration::Load()
 {
   if (_preferences.begin(SETTINGS_NAME, true))
   {
-    String currentConfigFileName = _preferences.getString(KEY_CONFIGFILE);
+    String currentConfigFileName = _preferences.getString(KEY_CONFIGFILE, String(DEFAULT_CONFIGFILE));
     _preferences.end();
 
     _currentConfigindex = -1;

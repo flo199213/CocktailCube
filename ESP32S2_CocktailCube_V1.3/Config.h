@@ -37,6 +37,7 @@
 
 // Preferences key for current config file
 #define KEY_CONFIGFILE                    "ConfigFile"   // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+#define DEFAULT_CONFIGFILE                "CocktailCube.json"
 
 // Config makro names used for loading json config files:
 #define IS_MIXER                          "IS_MIXER"
