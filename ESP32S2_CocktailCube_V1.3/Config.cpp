@@ -123,7 +123,7 @@ bool Configuration::Increment()
   {
     return false;
   }
-  
+
   _currentConfigindex++;
   
   if (_currentConfigindex >= _fileCount)
@@ -351,12 +351,9 @@ bool Configuration::CheckValid(JsonDocument doc)
   valid |= doc[IMAGE_LOGO].is<String>();
   valid |= doc[IMAGE_GLASS].is<String>();
   valid |= doc[IMAGE_BOTTLE1].is<String>();
-  if (isMixer)
-  {
-    valid |= doc[IMAGE_BOTTLE2].is<String>();
-    valid |= doc[IMAGE_BOTTLE3].is<String>();
-    valid |= doc[IMAGE_BOTTLE4].is<String>();
-  }
+  valid |= doc[IMAGE_BOTTLE2].is<String>();
+  valid |= doc[IMAGE_BOTTLE3].is<String>();
+  valid |= doc[IMAGE_BOTTLE4].is<String>();
 
   // Check image positions
   valid |= doc[TFT_LOGO_POS_X].is<int16_t>();
