@@ -36,10 +36,6 @@ void WifiHandler::Begin()
   // Log startup info
   ESP_LOGI(TAG, "Begin initializing wifi handler");
 
-  // Set SSID and password
-  _ssid = Config.mixerName.c_str();
-  _password = Config.mixerPassword.c_str();
-
   // Load wifi settings
   Load();
 
@@ -119,7 +115,7 @@ void WifiHandler::SetWifiMode(wifi_mode_t mode)
 
     // Start access point
     ESP_LOGI(TAG, "Start access point");
-    WiFi.softAP(_ssid, _password);
+    WiFi.softAP(WIFI_SSID, WIFI_PASSWORD);
     WiFi.softAPConfig(local_ip, gateway, subnet);
     delay(100);
 
@@ -166,9 +162,9 @@ wifi_mode_t WifiHandler::StartWebServer()
 {
   ESP_LOGI(TAG, "Start web server");
 
-  // Set up mDNS responder to mixer name, e.g. http://mixer.local
+  // Set up mDNS responder to mixer name, e.g. http://cocktailcube.local
   ESP_LOGI(TAG, "Set up mDNS responde");
-  String mdnsName = Config.mixerName;
+  String mdnsName = String(WIFI_SSID);
   mdnsName.toLowerCase();
   mdnsName.trim();
   MDNS.begin(mdnsName);
@@ -221,7 +217,7 @@ wifi_mode_t WifiHandler::StartWebServer()
   ESP_LOGI(TAG, "Add not found handler");
   _webserver->onNotFound([this]()
   {
-    String mixerName = Config.mixerName;
+    String mixerName = String(WIFI_SSID);
     mixerName.toLowerCase();
     mixerName.trim();
     _webserver->send(404, "text/plain; charset=utf-8", "Sorry, page not found! Go to 'http://" + mixerName + ".local' or 'http://192.168.1.1/'. If you want to upload files use '/edit' as sub page.");

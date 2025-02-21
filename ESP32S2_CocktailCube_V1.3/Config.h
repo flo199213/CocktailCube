@@ -26,6 +26,9 @@
 #define APP_COPYRIGHT                     "2025"
 #define SETTINGS_NAME                     "Settings"
 
+#define WIFI_SSID                         "CockailCube" // Should not exceed 15 characters and be a single word -> will be the dns name in lower case and without white spaces for example "http://cocktailcube.local/"
+#define WIFI_PASSWORD                     "mixer1234"   // Should not exceed 15 characters
+
 // Max config count to load (Increasing this will cost memory!)
 #define MAXCONFIGS                        15
 
@@ -38,7 +41,6 @@
 // Config makro names used for loading json config files:
 #define IS_MIXER                          "IS_MIXER"
 #define MIXER_NAME                        "MIXER_NAME"
-#define MIXER_PASSWORD                    "MIXER_PASSWORD"
 #define LIQUID1_NAME                      "LIQUID1_NAME"
 #define LIQUID2_NAME                      "LIQUID2_NAME"
 #define LIQUID3_NAME                      "LIQUID3_NAME"
@@ -134,7 +136,6 @@ class Configuration
     bool isMixer;
     
     String mixerName;
-    String mixerPassword;
 
     String liquid1Name;
     String liquid2Name;

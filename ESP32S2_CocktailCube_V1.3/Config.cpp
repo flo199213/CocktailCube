@@ -263,7 +263,6 @@ void Configuration::ResetConfig()
 {
   Config.isMixer = true;
   Config.mixerName = "CocktailCube";
-  Config.mixerPassword = "mixer1234";
   Config.liquid1Name = "Liquid 1";
   Config.liquid2Name = "Liquid 2";
   Config.liquid3Name = "Liquid 3";
@@ -313,9 +312,8 @@ bool Configuration::CheckValid(JsonDocument doc)
   valid |= doc[IS_MIXER].is<bool>();
   bool isMixer = doc[IS_MIXER].as<bool>();
 
-  // Check mixer name and password
+  // Check mixer name
   valid |= doc[MIXER_NAME].is<String>() && doc[MIXER_NAME].as<String>().length() <= 15;
-  valid |= doc[MIXER_PASSWORD].is<String>() && doc[MIXER_PASSWORD].as<String>().length() <= 15;
 
   // Check liquid names
   valid |= doc[LIQUID1_NAME].is<String>() && doc[LIQUID1_NAME].as<String>().length() <= 10;
@@ -388,7 +386,6 @@ bool Configuration::LoadConfig(JsonDocument doc)
   
   // Read mixer name and password
   Config.mixerName = doc[MIXER_NAME].as<String>();
-  Config.mixerPassword = doc[MIXER_PASSWORD].as<String>();
 
   // Read liquid names
   Config.liquid1Name = doc[LIQUID1_NAME].as<String>();
