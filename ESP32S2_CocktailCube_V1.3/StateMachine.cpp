@@ -828,6 +828,9 @@ void StateMachine::FctSettings(MixerEvent event)
                   // Reset config if loading failed
                   Config.ResetConfig();
                 }
+
+                // Reset mixture
+                SetMixtureDefaults();
                   
                 // Reset to settings page
                 Display.ShowSettingsPage();
