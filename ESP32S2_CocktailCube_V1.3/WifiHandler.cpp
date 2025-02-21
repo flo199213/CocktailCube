@@ -239,9 +239,12 @@ wifi_mode_t WifiHandler::StartWebServer()
 //===============================================================
 void WifiHandler::StopWebServer()
 {
-  // Stop web server
-  ESP_LOGI(TAG, "Stop web server");
-  _webserver->stop();
+  if (_webserver)
+  {
+    // Stop web server
+    ESP_LOGI(TAG, "Stop web server");
+    _webserver->stop();
+  }
 
   // Set web server to null
   ESP_LOGI(TAG, "Set web server to null");
