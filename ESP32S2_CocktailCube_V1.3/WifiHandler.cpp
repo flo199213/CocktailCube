@@ -53,7 +53,7 @@ void WifiHandler::Load()
 {
   if (_preferences.begin(SETTINGS_NAME, true))
   {
-    _initWifiMode = _preferences.getBool(KEY_WIFIMODE, false) ? WIFI_MODE_AP : WIFI_MODE_NULL;
+    _initWifiMode = _preferences.getBool(KEY_WIFIMODE, true) ? WIFI_MODE_AP : WIFI_MODE_NULL;
     _preferences.end();
 
     ESP_LOGI(TAG, "Preferences successfully loaded from '%s'", SETTINGS_NAME);
