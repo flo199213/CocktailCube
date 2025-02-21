@@ -27,7 +27,7 @@
 #define SETTINGS_NAME                     "Settings"
 
 // Max config count to load (Increasing this will cost memory!)
-#define MAXCONFIGS                        10
+#define MAXCONFIGS                        15
 
 // Set the value to 1 or -1 if your encoder is turning in the wrong direction
 #define ENCODER_DIRECTION                 1
@@ -190,50 +190,13 @@ class Configuration
     void Save();
 
     // Returns currently loaded configuration
-    String GetCurrent()
-    {
-      if (_currentConfigindex >= 0 && 
-        _currentConfigindex < _fileCount)
-      {
-        return _files[_currentConfigindex];
-      }
-
-      return "default";
-    };
+    String GetCurrent();
 
     // Increments config
-    bool Increment()
-    {
-      if (_fileCount == 0)
-      {
-        return false;
-      }
-      _currentConfigindex++;
-      
-      if (_currentConfigindex >= _fileCount)
-      {
-        _currentConfigindex = 0;
-      }
-      
-      return true;
-    };
+    bool Increment();
     
     // Decrements config
-    bool Decrement()
-    {
-      if (_fileCount == 0)
-      {
-        return false;
-      }
-      _currentConfigindex--;
-      
-      if (_currentConfigindex < 0)
-      {
-        _currentConfigindex = _fileCount - 1;
-      }
-
-      return true;
-    };
+    bool Decrement();
 
     // Enumerates all valid json config files
     void EnumerateConfigs();

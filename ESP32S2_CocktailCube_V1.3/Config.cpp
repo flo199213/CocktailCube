@@ -36,6 +36,9 @@ bool Configuration::Begin()
   // Log startup info
   ESP_LOGI(TAG, "Begin initializing configuration");
 
+  // Reset configuration
+  ResetConfig();
+
   // Enumerate all config files from file system
   EnumerateConfigs();
 
@@ -95,6 +98,60 @@ void Configuration::Save()
   {
     ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
   }
+}
+
+//===============================================================
+// Returns currently loaded configuration
+//===============================================================
+String Configuration::GetCurrent()
+{
+  if (_currentConfigindex >= 0 && 
+    _currentConfigindex < _fileCount)
+  {
+    return _files[_currentConfigindex];
+  }
+
+  return "default";
+}
+
+//===============================================================
+// Increments config
+//===============================================================
+bool Configuration::Increment()
+{
+  if (_fileCount == 0)
+  {
+    return false;
+  }
+  
+  _currentConfigindex++;
+  
+  if (_currentConfigindex >= _fileCount)
+  {
+    _currentConfigindex = 0;
+  }
+  
+  return true;
+};
+
+//===============================================================
+// Decrements config
+//===============================================================
+bool Configuration::Decrement()
+{
+  if (_fileCount == 0)
+  {
+    return false;
+  }
+
+  _currentConfigindex--;
+  
+  if (_currentConfigindex < 0)
+  {
+    _currentConfigindex = _fileCount - 1;
+  }
+
+  return true;
 }
 
 //===============================================================
