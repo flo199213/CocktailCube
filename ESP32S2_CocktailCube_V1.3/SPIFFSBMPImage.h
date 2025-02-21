@@ -16,7 +16,6 @@
 #include <cmath>
 #include <SPIFFS.h>
 #include <Adafruit_SPITFT.h>
-#include "Config.h"
 
 //===============================================================
 // Defines
@@ -53,7 +52,7 @@ class SPIFFSBMPImage
     ~SPIFFSBMPImage();
 
     // Allocates the internal buffer
-    ImageReturnCode Allocate(String filename);
+    ImageReturnCode Allocate(String fileName);
 
     // Deallocates the internal buffer
     void Deallocate();
@@ -69,12 +68,12 @@ class SPIFFSBMPImage
 
     // Return the valid state of the image
     int16_t IsValid() const { return _isValid; }
-        
+    
     // Return a pixel at the requested position
     uint16_t GetPixel(int16_t x, int16_t y);
     
     // Draws the image on the tft
-    void Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor = 0, bool asShadow = false);
+    bool Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor = 0, bool asShadow = false);
 
     // Clears the difference between two images
     void ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, SPIFFSBMPImage* otherImage, Adafruit_SPITFT* tft, uint16_t clearColor);
@@ -87,6 +86,7 @@ class SPIFFSBMPImage
 
   private:
     // File object for reading image data
+    String _fileName;
     File _file;
 
     // Image size

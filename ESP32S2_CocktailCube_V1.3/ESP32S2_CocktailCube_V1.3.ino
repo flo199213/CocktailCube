@@ -95,9 +95,6 @@ static const char* TAG = "main";
 //===============================================================
 // Global variables
 //===============================================================
-// Global configuration
-Config config;
-
 // Non-volatile preferences from flash
 Preferences preferences;
 
@@ -180,13 +177,14 @@ void setup(void)
   ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
   ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
 
-  // Initialize SPI
+  // Initialize hardware SPI (Force HSPI)
   ESP_LOGI(TAG, "Initialize SPI");
-  SPI.begin();
+  SPIClass *spi = new SPIClass(HSPI);
+  spi->begin(PIN_TFT_SCL, -1, PIN_TFT_SDA, PIN_TFT_CS);
 
   // Initialize display
   ESP_LOGI(TAG, "Initialize display");
-  tft = new Adafruit_ST7789(PIN_TFT_CS, PIN_TFT_DC, PIN_TFT_RST);
+  tft = new Adafruit_ST7789(spi, PIN_TFT_CS, PIN_TFT_DC, PIN_TFT_RST);
   Display.Begin(tft);
   ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
   ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
@@ -207,8 +205,11 @@ void setup(void)
 
   // Loading config file
   ESP_LOGI(TAG, "Loading config file");
-  if (!LoadConfig("/config.txt"))
+  if (!Config.Begin())
   {
+    // Reset Config
+    Config.ResetConfig();
+
     // Debug information on display
     Display.DrawInfoBox("Error", "Load config failed");
     ESP_LOGE(TAG, "Load config failed");

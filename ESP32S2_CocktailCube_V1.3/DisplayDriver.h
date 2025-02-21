@@ -199,6 +199,9 @@ class DisplayDriver
     // Sets the cleaning liquid value
     void SetCleaningLiquid(MixtureLiquid liquid);
 
+    // Sets the mixer setting
+    void SetMixerSetting(MixerSetting setting);
+
     // Sets the angles values
     void SetAngles(int16_t liquid1Angle_Degrees, int16_t liquid2Angle_Degrees, int16_t liquid3Angle_Degrees);
 
@@ -271,12 +274,12 @@ class DisplayDriver
     char _output[30];
 
     // Image pointer
-    SPIFFSBMPImage* _imageLogo;
-    SPIFFSBMPImage* _imageGlass;
-    SPIFFSBMPImage* _imageBottle1;
-    SPIFFSBMPImage* _imageBottle2;
-    SPIFFSBMPImage* _imageBottle3;
-    SPIFFSBMPImage* _imageBottle4;
+    SPIFFSBMPImage _imageLogo;
+    SPIFFSBMPImage _imageGlass;
+    SPIFFSBMPImage _imageBottle1;
+    SPIFFSBMPImage _imageBottle2;
+    SPIFFSBMPImage _imageBottle3;
+    SPIFFSBMPImage _imageBottle4;
 
     // Current mixture settings
     MixerState _menuState = eDashboard;
@@ -295,6 +298,9 @@ class DisplayDriver
     BarBottle _barBottle1 = eRedWine;
     BarBottle _barBottle2 = eWhiteWine;
     BarBottle _barBottle3 = eRoseWine;
+
+    // Setting mode settings
+    MixerSetting _currentSetting = ePWM;
         
     // Last draw values
     MixerState _lastDraw_MenuState = eDashboard;
@@ -313,6 +319,8 @@ class DisplayDriver
     BarBottle _lastDraw_barBottle3 = eEmpty;
     uint32_t _lastDraw_cycleTimespan_ms = 0;
     wifi_mode_t _lastDraw_wifiMode = WIFI_MODE_NULL;
+    MixerSetting _lastDraw_currentSetting = ePWM;
+    String _lastDraw_Config = "";
     uint16_t _lastDraw_ConnectedClients = 0;
 
     // Screen saver variables
@@ -321,6 +329,9 @@ class DisplayDriver
     int16_t _lastLogo_y = TFT_HEIGHT / 2;
     int16_t _xDir = 1;
     int16_t _yDir = 1;
+    
+    // Loads an image and checks for deallocation before loading
+    void LoadImage(SPIFFSBMPImage* _image, String fileName);
 
     // Draws default header Text
     void DrawHeader();

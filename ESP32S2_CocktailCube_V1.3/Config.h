@@ -15,6 +15,7 @@
 #include <Arduino.h>
 #include <FS.h>
 #include <SPIFFS.h>
+#include <Preferences.h>
 #include <ArduinoJson.h>
 #include <Adafruit_ST77xx.h>
 
@@ -25,8 +26,54 @@
 #define APP_COPYRIGHT                     "2025"
 #define SETTINGS_NAME                     "Settings"
 
+// Max config count to load (Increasing this will cost memory!)
+#define MAXCONFIGS                        10
+
 // Set the value to 1 or -1 if your encoder is turning in the wrong direction
 #define ENCODER_DIRECTION                 1
+
+// Preferences key for current config file
+#define KEY_CONFIGFILE                    "ConfigFile"   // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+
+// Config makro names used for loading json config files:
+#define IS_MIXER                          "IS_MIXER"
+#define MIXER_NAME                        "MIXER_NAME"
+#define MIXER_PASSWORD                    "MIXER_PASSWORD"
+#define LIQUID1_NAME                      "LIQUID1_NAME"
+#define LIQUID2_NAME                      "LIQUID2_NAME"
+#define LIQUID3_NAME                      "LIQUID3_NAME"
+#define LIQUID1ANGLE_DEGREES              "LIQUID1ANGLE_DEGREES"
+#define LIQUID2ANGLE_DEGREES              "LIQUID2ANGLE_DEGREES"
+#define LIQUID3ANGLE_DEGREES              "LIQUID3ANGLE_DEGREES"
+#define TFT_COLOR_STARTPAGE               "TFT_COLOR_STARTPAGE"
+#define TFT_COLOR_STARTPAGE_FOREGROUND    "TFT_COLOR_STARTPAGE_FOREGROUND"
+#define TFT_COLOR_STARTPAGE_BACKGROUND    "TFT_COLOR_STARTPAGE_BACKGROUND"
+#define TFT_COLOR_TEXT_HEADER             "TFT_COLOR_TEXT_HEADER"
+#define TFT_COLOR_TEXT_BODY               "TFT_COLOR_TEXT_BODY"
+#define TFT_COLOR_INFOBOX_BORDER          "TFT_COLOR_INFOBOX_BORDER"
+#define TFT_COLOR_INFOBOX_FOREGROUND      "TFT_COLOR_INFOBOX_FOREGROUND"
+#define TFT_COLOR_INFOBOX_BACKGROUND      "TFT_COLOR_INFOBOX_BACKGROUND"
+#define TFT_COLOR_MENU_SELECTOR           "TFT_COLOR_MENU_SELECTOR"
+#define TFT_COLOR_LIQUID_1                "TFT_COLOR_LIQUID_1"
+#define TFT_COLOR_LIQUID_2                "TFT_COLOR_LIQUID_2"
+#define TFT_COLOR_LIQUID_3                "TFT_COLOR_LIQUID_3"
+#define TFT_COLOR_FOREGROUND              "TFT_COLOR_FOREGROUND"
+#define TFT_COLOR_BACKGROUND              "TFT_COLOR_BACKGROUND"
+#define WIFI_COLOR_LIQUID_1               "WIFI_COLOR_LIQUID_1"
+#define WIFI_COLOR_LIQUID_2               "WIFI_COLOR_LIQUID_2"
+#define WIFI_COLOR_LIQUID_3               "WIFI_COLOR_LIQUID_3"
+#define IMAGE_LOGO                        "IMAGE_LOGO"
+#define IMAGE_GLASS                       "IMAGE_GLASS"
+#define IMAGE_BOTTLE1                     "IMAGE_BOTTLE1"
+#define IMAGE_BOTTLE2                     "IMAGE_BOTTLE2"
+#define IMAGE_BOTTLE3                     "IMAGE_BOTTLE3"
+#define IMAGE_BOTTLE4                     "IMAGE_BOTTLE4"
+#define TFT_LOGO_POS_X                    "TFT_LOGO_POS_X"
+#define TFT_LOGO_POS_Y                    "TFT_LOGO_POS_Y"
+#define TFT_GLASS_POS_X                   "TFT_GLASS_POS_X"
+#define TFT_GLASS_POS_Y                   "TFT_GLASS_POS_Y"
+#define TFT_BOTTLE_POS_X                  "TFT_BOTTLE_POS_X"
+#define TFT_BOTTLE_POS_Y                  "TFT_BOTTLE_POS_Y"
 
 //===============================================================
 // Enums
@@ -39,8 +86,8 @@ enum MixtureLiquid : uint16_t
   eLiquidAll = 3,
   eLiquidNone = 0xFFFF
 };
-const int MixtureLiquidDashboardMax = 3;
-const int MixtureLiquidCleaningMax = 4;
+const uint16_t MixtureLiquidDashboardMax = 3;
+const uint16_t MixtureLiquidCleaningMax = 4;
 
 enum MixerState : uint16_t
 {
@@ -68,71 +115,159 @@ enum BarBottle : uint16_t
   eWhiteWine = 3,
   eRoseWine = 4,
 };
-const int BarBottleMax = 5;
+const uint16_t BarBottleMax = 5;
 
-//===============================================================
-// Structs
-//===============================================================
-// Config struct
-struct Config
+enum MixerSetting : uint16_t
 {
-  bool isMixer = true;
-  
-  String mixerName = "CocktailCube";
-  String mixerPassword = "mixer1234";
-
-  String liquid1Name = "Liquid 1";
-  String liquid2Name = "Liquid 2";
-  String liquid3Name = "Liquid 3";
-
-  int16_t liquid1AngleDegrees = 0;
-  int16_t liquid2AngleDegrees = 120;
-  int16_t liquid3AngleDegrees = 240;
-
-  uint16_t tftColorStartPage = 0xFC00;
-  uint16_t tftColorStartPageForeground = 0xDF9E;
-  uint16_t tftColorStartPageBackground = 0xA6DC;
-  uint16_t tftColorTextHeader = ST77XX_WHITE;
-  uint16_t tftColorTextBody = ST77XX_WHITE;
-  uint16_t tftColorInfoBoxBorder = ST77XX_BLACK;
-  uint16_t tftColorInfoBoxForeground = ST77XX_BLACK;
-  uint16_t tftColorInfoBoxBackground = ST77XX_WHITE;
-  uint16_t tftColorMenuSelector = ST77XX_WHITE;
-  uint16_t tftColorLiquid1 = ST77XX_RED;
-  uint16_t tftColorLiquid2 = ST77XX_GREEN;
-  uint16_t tftColorLiquid3 = ST77XX_BLUE;
-  uint16_t tftColorForeground = ST77XX_WHITE;
-  uint16_t tftColorBackground = ST77XX_BLACK;
-
-  String wifiColorLiquid1 = "0xF70202";
-  String wifiColorLiquid2 = "0x38F702";
-  String wifiColorLiquid3 = "0x1B02F7";
-
-  String imageLogo = "";
-  String imageGlass = "";
-  String imageBottle1 = "";
-  String imageBottle2 = "";
-  String imageBottle3 = "";
-  String imageBottle4 = "";
-
-  int16_t tftLogoPosX;
-  int16_t tftLogoPosY;
-  int16_t tftGlassPosX;
-  int16_t tftGlassPosY;
-  int16_t tftBottlePosX;
-  int16_t tftBottlePosY;
+  ePWM = 0,
+  eWLAN = 1,
+  eConfig = 2,
 };
+const uint16_t MixerSettingMax = 3;
 
 //===============================================================
-// Declarations
+// Configuration class
 //===============================================================
+class Configuration
+{
+  public:
+    bool isMixer;
+    
+    String mixerName;
+    String mixerPassword;
 
-// Loads the configuration from a JSON file
-bool LoadConfig(const char* filename);
+    String liquid1Name;
+    String liquid2Name;
+    String liquid3Name;
+
+    int16_t liquid1AngleDegrees;
+    int16_t liquid2AngleDegrees;
+    int16_t liquid3AngleDegrees;
+
+    uint16_t tftColorStartPage;
+    uint16_t tftColorStartPageForeground;
+    uint16_t tftColorStartPageBackground;
+    uint16_t tftColorTextHeader;
+    uint16_t tftColorTextBody;
+    uint16_t tftColorInfoBoxBorder;
+    uint16_t tftColorInfoBoxForeground;
+    uint16_t tftColorInfoBoxBackground;
+    uint16_t tftColorMenuSelector;
+    uint16_t tftColorLiquid1;
+    uint16_t tftColorLiquid2;
+    uint16_t tftColorLiquid3;
+    uint16_t tftColorForeground;
+    uint16_t tftColorBackground;
+
+    String wifiColorLiquid1;
+    String wifiColorLiquid2;
+    String wifiColorLiquid3;
+
+    String imageLogo;
+    String imageGlass;
+    String imageBottle1;
+    String imageBottle2;
+    String imageBottle3;
+    String imageBottle4;
+
+    int16_t tftLogoPosX;
+    int16_t tftLogoPosY;
+    int16_t tftGlassPosX;
+    int16_t tftGlassPosY;
+    int16_t tftBottlePosX;
+    int16_t tftBottlePosY;
+
+    // Constructor
+    Configuration();
+
+    // Initializes the configuration
+    bool Begin();
+
+    // Load values from flash
+    void Load();
+
+    // Save values to flash
+    void Save();
+
+    // Returns currently loaded configuration
+    String GetCurrent()
+    {
+      if (_currentConfigindex >= 0 && 
+        _currentConfigindex < _fileCount)
+      {
+        return _files[_currentConfigindex];
+      }
+
+      return "default";
+    };
+
+    // Increments config
+    bool Increment()
+    {
+      if (_fileCount == 0)
+      {
+        return false;
+      }
+      _currentConfigindex++;
+      
+      if (_currentConfigindex >= _fileCount)
+      {
+        _currentConfigindex = 0;
+      }
+      
+      return true;
+    };
+    
+    // Decrements config
+    bool Decrement()
+    {
+      if (_fileCount == 0)
+      {
+        return false;
+      }
+      _currentConfigindex--;
+      
+      if (_currentConfigindex < 0)
+      {
+        _currentConfigindex = _fileCount - 1;
+      }
+
+      return true;
+    };
+
+    // Enumerates all valid json config files
+    void EnumerateConfigs();
+
+    // Loads the configuration
+    bool LoadConfig(String configFileName);
+    
+    // Resets the configuration to defaults
+    void ResetConfig();
+
+  private:
+    // Preferences variable
+    Preferences _preferences;
+    
+    // List of all config files
+    String _files[MAXCONFIGS];
+    uint8_t _fileCount = 0;
+    
+    // Current config index
+    int16_t _currentConfigindex = -1;
+
+    // Checks, if a file is an valid config file
+    bool CheckValid(JsonDocument doc);
+    
+    // Loads the configuration from a JSON file
+    bool LoadConfig(JsonDocument doc);
+
+    // Converts an hex string to an uint16_t value
+    bool TryHexStringToUint16(const String& hexString, uint16_t* value);
+};
 
 //===============================================================
 // Global variables
 //===============================================================
-extern Config config;
+extern Configuration Config;
 
 #endif

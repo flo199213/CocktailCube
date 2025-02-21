@@ -148,7 +148,7 @@ void StateMachine::FctMenu(MixerEvent event)
               _currentMenuState = currentEncoderIncrements > 0 ? eDashboard : eCleaning;
               break;
             case eCleaning:
-              _currentMenuState = currentEncoderIncrements > 0 ? eDashboard : (config.isMixer ? eReset : eBar);
+              _currentMenuState = currentEncoderIncrements > 0 ? eDashboard : (Config.isMixer ? eReset : eBar);
               break;
             case eReset:
               _currentMenuState = currentEncoderIncrements > 0 ? eCleaning : eSettings;
@@ -157,7 +157,7 @@ void StateMachine::FctMenu(MixerEvent event)
               _currentMenuState = currentEncoderIncrements > 0 ? eCleaning : eSettings;
               break;
             case eSettings:
-              _currentMenuState = currentEncoderIncrements > 0 ? (config.isMixer ? eReset : eBar) : eSettings;
+              _currentMenuState = currentEncoderIncrements > 0 ? (Config.isMixer ? eReset : eBar) : eSettings;
               break;
             default:
               break;
@@ -213,7 +213,7 @@ void StateMachine::FctDashboard(MixerEvent event)
   {
     case eEntry:
       {
-        if (!config.isMixer)
+        if (!Config.isMixer)
         {
           // If all three bottles are configured empty thats okay, because in this case the checkboxes will be displayed
           bool allEmpty = _barBottle1 == eEmpty && _barBottle2 == eEmpty && _barBottle3 == eEmpty;
@@ -334,7 +334,7 @@ void StateMachine::FctDashboard(MixerEvent event)
         // Will be true, if new encoder position is available
         if (currentEncoderIncrements != 0)
         {
-          if (config.isMixer)
+          if (Config.isMixer)
           {
             // Increment or decrement angle
             switch (_dashboardLiquid)
@@ -374,7 +374,7 @@ void StateMachine::FctDashboard(MixerEvent event)
           // Update display and pump values
           UpdateValues();
 
-          if (config.isMixer)
+          if (Config.isMixer)
           {
             // Draw current value string and doughnut chart in partial updating mode
             Display.DrawCurrentValues();
@@ -393,7 +393,7 @@ void StateMachine::FctDashboard(MixerEvent event)
           // Short beep sound
           tone(_pinBuzzer, 500, 40);
 
-          if (config.isMixer)
+          if (Config.isMixer)
           {
             // Incrementing the setting value taking into account the overflow
             _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
@@ -436,7 +436,7 @@ void StateMachine::FctDashboard(MixerEvent event)
           // Update all values
           UpdateValues();
           
-          if (config.isMixer)
+          if (Config.isMixer)
           {
             // Draw legend and doughnut chart in partial updating mode
             Display.DrawLegend();
@@ -771,6 +771,9 @@ void StateMachine::FctSettings(MixerEvent event)
         // Update display and pump values
         UpdateValues();
 
+        // Update configurations
+        Config.EnumerateConfigs();
+
         // Show settings page
         ESP_LOGI(TAG, "Enter settings mode");
         Display.ShowSettingsPage();
@@ -792,25 +795,70 @@ void StateMachine::FctSettings(MixerEvent event)
         // Will be true, if new encoder position is available
         if (currentEncoderIncrements != 0)
         {
-          // Update cycle timespan
-          Pumps.SetCycleTimespan(Pumps.GetCycleTimespan() + currentEncoderIncrements * 20);
-          
+          switch (_currentSetting)
+          {
+            case ePWM:
+              // Update cycle timespan
+              Pumps.SetCycleTimespan(Pumps.GetCycleTimespan() + currentEncoderIncrements * 20);
+              break;
+
+            case eWLAN:
+              // Update wifi mode
+              Wifihandler.SetWifiMode(Wifihandler.GetWifiMode() == WIFI_MODE_AP ? WIFI_MODE_NULL : WIFI_MODE_AP);
+              Display.DrawWifiIcons(true);
+              break;
+
+            case eConfig:
+              // Update configuration
+              if ((currentEncoderIncrements > 0 && Config.Increment()) ||
+                (currentEncoderIncrements < 0 && Config.Decrement()))
+              {
+                // Load new configuration
+                if (Config.LoadConfig(Config.GetCurrent()))
+                {
+                  // Load new images
+                  Display.LoadImages();
+
+                  // Show intro page for a few milliseconds
+                  Display.ShowIntroPage();
+                  delay(800);
+                }
+                else
+                {
+                  // Reset config if loading failed
+                  Config.ResetConfig();
+                }
+                  
+                // Reset to settings page
+                Display.ShowSettingsPage();
+              }
+              break;
+          }
+
           // Draw settings in partial update mode
           Display.DrawSettings();
+          
+          // Discard encoder increments
+          EncoderButton.GetEncoderIncrements();
         }
         
         // Check for short button press
         if (EncoderButton.IsButtonPress())
         {
-          // Update wifi mode
-          Wifihandler.SetWifiMode(Wifihandler.GetWifiMode() == WIFI_MODE_AP ? WIFI_MODE_NULL : WIFI_MODE_AP);
-
           // Short beep sound
           tone(_pinBuzzer, 500, 40);
 
-          // Draw settings in partial update mode
-          Display.DrawWifiIcons(true);
+          // Incrementing the setting value taking into account the overflow
+          _currentSetting = (uint16_t)_currentSetting + 1 >= MixerSettingMax ? ePWM : (MixerSetting)(_currentSetting + 1);
+
+          // Update all values
+          UpdateValues();
+          
+          // Draw settings
           Display.DrawSettings();
+          
+          // Debounce settings change
+          delay(200);
         }
 
         // Draw wifi icons
@@ -846,6 +894,7 @@ void StateMachine::FctSettings(MixerEvent event)
       {
         Pumps.Save();
         Wifihandler.Save();
+        Config.Save();
       }
       break;
     default:
@@ -908,9 +957,9 @@ void StateMachine::FctScreenSaver(MixerEvent event)
 void StateMachine::SetMixtureDefaults()
 { 
   // Set mixture to default
-  _liquid1Angle_Degrees = config.liquid1AngleDegrees;
-  _liquid2Angle_Degrees = config.liquid2AngleDegrees;
-  _liquid3Angle_Degrees = config.liquid3AngleDegrees;
+  _liquid1Angle_Degrees = Config.liquid1AngleDegrees;
+  _liquid2Angle_Degrees = Config.liquid2AngleDegrees;
+  _liquid3Angle_Degrees = Config.liquid3AngleDegrees;
 }
 
 //===============================================================
@@ -918,7 +967,7 @@ void StateMachine::SetMixtureDefaults()
 //===============================================================
 void StateMachine::UpdateValues()
 {
-  if (config.isMixer)
+  if (Config.isMixer)
   {
     int16_t liquid1Distance_Degrees = GetDistanceDegrees(_liquid1Angle_Degrees, _liquid2Angle_Degrees);
     int16_t liquid2Distance_Degrees = GetDistanceDegrees(_liquid2Angle_Degrees, _liquid3Angle_Degrees);
@@ -979,6 +1028,7 @@ void StateMachine::UpdateValues()
   Display.SetMenuState(_currentMenuState);
   Display.SetDashboardLiquid(_dashboardLiquid);
   Display.SetCleaningLiquid(_cleaningLiquid);
+  Display.SetMixerSetting(_currentSetting);
   Display.SetBar(_barBottle1, _barBottle2, _barBottle3);
   Display.SetAngles(_liquid1Angle_Degrees, _liquid2Angle_Degrees, _liquid3Angle_Degrees);
   Display.SetPercentages(_liquid1_Percentage, _liquid2_Percentage, _liquid3_Percentage);
@@ -990,7 +1040,7 @@ void StateMachine::UpdateValues()
   {
     case eDashboard:
       {
-        if (config.isMixer)
+        if (Config.isMixer)
         {
           Pumps.SetPumps(_liquid1_Percentage, _liquid2_Percentage, _liquid3_Percentage);
         }
@@ -1059,9 +1109,9 @@ String StateMachine::GetMixtureString()
   // Build string output
   String returnString;
 
-  returnString += String(config.liquid1Name) + ": " + String(_liquid1_Percentage) + "% (" + String(_liquid1Angle_Degrees) + "°), ";
-  returnString += String(config.liquid2Name) + ": " + String(_liquid2_Percentage) + "% (" + String(_liquid2Angle_Degrees) + "°), ";
-  returnString += String(config.liquid3Name) + ": " + String(_liquid3_Percentage) + "% (" + String(_liquid3Angle_Degrees) + "°), ";
+  returnString += String(Config.liquid1Name) + ": " + String(_liquid1_Percentage) + "% (" + String(_liquid1Angle_Degrees) + "°), ";
+  returnString += String(Config.liquid2Name) + ": " + String(_liquid2_Percentage) + "% (" + String(_liquid2Angle_Degrees) + "°), ";
+  returnString += String(Config.liquid3Name) + ": " + String(_liquid3_Percentage) + "% (" + String(_liquid3Angle_Degrees) + "°), ";
   returnString += "Sum: " + String(sum_Percentage) + "%";
   
   if ((sum_Percentage - 100.0) > 0.1 || (sum_Percentage - 100.0) < -0.1)

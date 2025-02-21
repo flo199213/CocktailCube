@@ -34,19 +34,34 @@ SPIFFSBMPImage::~SPIFFSBMPImage()
 //===============================================================
 // Allocates the internal buffer
 //===============================================================
-ImageReturnCode SPIFFSBMPImage::Allocate(String filename)
+ImageReturnCode SPIFFSBMPImage::Allocate(String fileName)
 {
-  ESP_LOGI(TAG, "Allocating new SPIFFS image '%s'", filename.c_str());
+  ESP_LOGI(TAG, "Allocating new SPIFFS image '%s'", fileName.c_str());
+  
+  // Check file name
+  if (fileName.isEmpty())
+  {
+    return IMAGE_ERR_FILE_NOT_FOUND;
+  }
+
+  // Set file name
+  _fileName = fileName;
 
   // Correct path if it does not start with "/"
-  filename.trim();
-  if (!filename.startsWith("/"))
+  String filePath = _fileName;
+  if (!filePath.startsWith("/"))
   {
-    filename = "/" + filename;
+    filePath = "/" + filePath;
   }
 
   // Open requested file on SPIFFS
-  if (!(_file = SPIFFS.open(filename, FILE_READ)))
+  if (!(_file = SPIFFS.open(filePath, FILE_READ)))
+  {
+    return IMAGE_ERR_FILE_NOT_FOUND;
+  }
+
+  // Check if directory
+  if (_file.isDirectory())
   {
     return IMAGE_ERR_FILE_NOT_FOUND;
   }
@@ -171,7 +186,9 @@ ImageReturnCode SPIFFSBMPImage::Allocate(String filename)
   // Set valid flag
   _isValid = readCount == pixelDataByteSize;
   
+  // Close file
   _file.close();
+
   return IMAGE_SUCCESS;
 }
 
@@ -180,6 +197,8 @@ ImageReturnCode SPIFFSBMPImage::Allocate(String filename)
 //===============================================================
 void SPIFFSBMPImage::Deallocate()
 {
+  ESP_LOGI(TAG, "Deallocating SPIFFS image '%s'", _fileName.c_str());
+
   // Remove valid fag
   _isValid = false;
 
@@ -196,8 +215,12 @@ void SPIFFSBMPImage::Deallocate()
   if (_bufferPixelData)
   {
     free(_bufferPixelData);
+    _bufferPixelData = NULL;
     ESP_LOGI(TAG, "Bitmap image buffer is free");
   }
+  
+  ESP_LOGI(TAG, "Image '%s' deleted (Heap: %d / %d Bytes)", _fileName.c_str(), ESP.getFreeHeap(), ESP.getHeapSize());
+  _fileName = "";
 }
 
 //===============================================================
@@ -235,15 +258,22 @@ uint16_t SPIFFSBMPImage::GetPixel(int16_t x, int16_t y)
 //===============================================================
 // Draws the canvas on the tft
 //===============================================================
-void SPIFFSBMPImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor, bool asShadow)
+bool SPIFFSBMPImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor, bool asShadow)
 {
+  if (!_isValid)
+  {
+    return false;
+  }
+  
   // Write pixels
   tft->startWrite();
+  uint16_t currentColor = 0;
   for (int16_t row = 0; row < _height; row++)
   {
     for (int16_t column = 0; column < _width; column++)
     {
-      uint16_t currentColor = GetPixel(column, row);
+      currentColor = GetPixel(column, row);
+
       if (currentColor != TRANSPARENCY_COLOR)
       {
         tft->writePixel(x + column, y + row, asShadow ? shadowColor : currentColor);
@@ -251,6 +281,8 @@ void SPIFFSBMPImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t s
     }
   }
   tft->endWrite();
+  
+  return true;
 }
 
 //===============================================================
@@ -259,6 +291,12 @@ void SPIFFSBMPImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t s
 void SPIFFSBMPImage::ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, SPIFFSBMPImage* otherImage, Adafruit_SPITFT* tft, uint16_t clearColor)
 {
   if (otherImage == NULL)
+  {
+    return;
+  }
+
+  if (!_isValid ||
+    !otherImage->IsValid())
   {
     return;
   }
@@ -301,6 +339,11 @@ void SPIFFSBMPImage::ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, S
 //===============================================================
 void SPIFFSBMPImage::Move(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Adafruit_SPITFT* tft, uint16_t clearColor, bool onlyClear)
 {
+  if (!_isValid)
+  {
+    return;
+  }
+
   // Clear old image (only diff to new one, to avoid flickering)
   tft->startWrite();
   for (int16_t row = 0; row < _height; row++)

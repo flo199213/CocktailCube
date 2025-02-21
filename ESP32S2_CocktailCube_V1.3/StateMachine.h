@@ -78,6 +78,9 @@ class StateMachine
     BarBottle _barBottle2 = eWhiteWine;
     BarBottle _barBottle3 = eRoseWine;
 
+    // Setting mode settings
+    MixerSetting _currentSetting = ePWM;
+
     // Timer variables for reset counter
     uint32_t _resetTimestamp = 0;
     const uint32_t ResetTime_ms = 2000;

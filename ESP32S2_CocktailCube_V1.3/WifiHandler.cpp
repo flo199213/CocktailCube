@@ -37,8 +37,8 @@ void WifiHandler::Begin()
   ESP_LOGI(TAG, "Begin initializing wifi handler");
 
   // Set SSID and password
-  _ssid = config.mixerName.c_str();
-  _password = config.mixerPassword.c_str();
+  _ssid = Config.mixerName.c_str();
+  _password = Config.mixerPassword.c_str();
 
   // Load wifi settings
   Load();
@@ -168,7 +168,7 @@ wifi_mode_t WifiHandler::StartWebServer()
 
   // Set up mDNS responder to mixer name, e.g. http://mixer.local
   ESP_LOGI(TAG, "Set up mDNS responde");
-  String mdnsName = config.mixerName;
+  String mdnsName = Config.mixerName;
   mdnsName.toLowerCase();
   mdnsName.trim();
   MDNS.begin(mdnsName);
@@ -185,7 +185,7 @@ wifi_mode_t WifiHandler::StartWebServer()
   ESP_LOGI(TAG, "Add root URL handler");
   _webserver->on("/", HTTP_GET, [this]()
   {
-    // Redirect to SPIFFS editor
+    // Currently no index.html -> redirect to SPIFFS editor
     _webserver->sendHeader("Location", "/edit", true);
     _webserver->send(302);
   });
@@ -209,7 +209,7 @@ wifi_mode_t WifiHandler::StartWebServer()
     ESP.restart();
   });
   
-  // Add SPIFFS handler to web server
+  // Add SPIFFS handler to web server (http://[mixerName].local/edit or http://192.168.1.1/edit)
   ESP_LOGI(TAG, "Add SPIFFS handler");
   _webserver->addHandler(new SPIFFSEditor());
   
@@ -221,7 +221,7 @@ wifi_mode_t WifiHandler::StartWebServer()
   ESP_LOGI(TAG, "Add not found handler");
   _webserver->onNotFound([this]()
   {
-    String mixerName = config.mixerName;
+    String mixerName = Config.mixerName;
     mixerName.toLowerCase();
     mixerName.trim();
     _webserver->send(404, "text/plain; charset=utf-8", "Sorry, page not found! Go to 'http://" + mixerName + ".local' or 'http://192.168.1.1/'. If you want to upload files use '/edit' as sub page.");
