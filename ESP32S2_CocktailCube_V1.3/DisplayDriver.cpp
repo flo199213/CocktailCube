@@ -173,17 +173,20 @@ void DisplayDriver::ShowIntroPage()
   _tft->fillRect(0, 0,                TFT_WIDTH, TFT_HEIGHT * 0.8, Config.tftColorStartPageBackground);
   _tft->fillRect(0, TFT_HEIGHT * 0.8, TFT_WIDTH, TFT_HEIGHT * 0.2, Config.tftColorStartPageForeground);
 
-  // Draw intro images (Attention: Order is decisive!)
-  bool result = false;
-  result |= _imageBottle1.Draw(Config.tftBottlePosX, Config.tftBottlePosY, _tft);
-  result |= _imageGlass.Draw(Config.tftGlassPosX, Config.tftGlassPosY, _tft);
-  result |= _imageLogo.Draw(Config.tftLogoPosX, Config.tftLogoPosY, _tft);
-  
-  // If not a single image was drawn, show info message
-  if (!result)
+  // If not a single image is available, show info message
+  if (!_imageBottle1.IsValid() &&
+    !_imageGlass.IsValid() &&
+    !_imageLogo.IsValid())
   {
     // Draw info box (fallback)
-    DrawInfoBox("- Startpage -", "No SPIFFS Files!");
+    DrawInfoBox("- Startpage -", "No Image Files!");
+  }
+  else
+  {
+    // Draw intro images (Attention: Order is decisive!)
+    _imageBottle1.Draw(Config.tftBottlePosX, Config.tftBottlePosY, _tft, 0, false, true);
+    _imageGlass.Draw(Config.tftGlassPosX, Config.tftGlassPosY, _tft, 0, false, true);
+    _imageLogo.Draw(Config.tftLogoPosX, Config.tftLogoPosY, _tft, 0, false, true);
   }
 
   // Do NOT delete logo image (Usage for screensaver!)

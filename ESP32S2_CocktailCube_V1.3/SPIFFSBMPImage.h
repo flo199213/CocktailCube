@@ -15,7 +15,7 @@
 #include <Arduino.h>
 #include <cmath>
 #include <SPIFFS.h>
-#include <Adafruit_SPITFT.h>
+#include <Adafruit_ST7789.h>
 
 //===============================================================
 // Defines
@@ -73,7 +73,7 @@ class SPIFFSBMPImage
     uint16_t GetPixel(int16_t x, int16_t y);
     
     // Draws the image on the tft
-    bool Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor = 0, bool asShadow = false);
+    void Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor = 0, bool asShadow = false, bool showError = false);
 
     // Clears the difference between two images
     void ClearDiff(int16_t x0, int16_t y0, int16_t x1, int16_t y1, SPIFFSBMPImage* otherImage, Adafruit_SPITFT* tft, uint16_t clearColor);

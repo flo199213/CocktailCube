@@ -258,11 +258,18 @@ uint16_t SPIFFSBMPImage::GetPixel(int16_t x, int16_t y)
 //===============================================================
 // Draws the canvas on the tft
 //===============================================================
-bool SPIFFSBMPImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor, bool asShadow)
+void SPIFFSBMPImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t shadowColor, bool asShadow, bool showError)
 {
   if (!_isValid)
   {
-    return false;
+    if (showError)
+    {
+      tft->setTextColor(ST77XX_RED);
+      tft->setTextSize(1);
+      tft->setCursor(x, y);
+      tft->print("Not Found");
+    }
+    return;
   }
   
   // Write pixels
@@ -281,8 +288,6 @@ bool SPIFFSBMPImage::Draw(int16_t x, int16_t y, Adafruit_SPITFT* tft, uint16_t s
     }
   }
   tft->endWrite();
-  
-  return true;
 }
 
 //===============================================================
