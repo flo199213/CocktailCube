@@ -162,7 +162,7 @@ wifi_mode_t WifiHandler::StartWebServer()
 {
   ESP_LOGI(TAG, "Start web server");
 
-  // Set up mDNS responder to mixer name, e.g. http://cocktailcube.local
+  // Set up mDNS responder to http://[WIFI_SSID].local
   ESP_LOGI(TAG, "Set up mDNS responde");
   String mdnsName = String(WIFI_SSID);
   mdnsName.toLowerCase();
@@ -205,7 +205,7 @@ wifi_mode_t WifiHandler::StartWebServer()
     ESP.restart();
   });
   
-  // Add SPIFFS handler to web server (http://[mixerName].local/edit or http://192.168.1.1/edit)
+  // Add SPIFFS handler to web server (http://[WIFI_SSID].local/edit or http://192.168.1.1/edit)
   ESP_LOGI(TAG, "Add SPIFFS handler");
   _webserver->addHandler(new SPIFFSEditor());
   
@@ -217,10 +217,10 @@ wifi_mode_t WifiHandler::StartWebServer()
   ESP_LOGI(TAG, "Add not found handler");
   _webserver->onNotFound([this]()
   {
-    String mixerName = String(WIFI_SSID);
-    mixerName.toLowerCase();
-    mixerName.trim();
-    _webserver->send(404, "text/plain; charset=utf-8", "Sorry, page not found! Go to 'http://" + mixerName + ".local' or 'http://192.168.1.1/'. If you want to upload files use '/edit' as sub page.");
+    String domain = String(WIFI_SSID);
+    domain.toLowerCase();
+    domain.trim();
+    _webserver->send(404, "text/plain; charset=utf-8", "Sorry, page not found! Go to 'http://" + domain + ".local' or 'http://192.168.1.1/'. If you want to upload files use '/edit' as sub page.");
   });
 
   // Start web server
