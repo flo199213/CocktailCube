@@ -1,26 +1,27 @@
 # CocktailCube
 Sourcecode for CocktailCube Devices powered by ESP32-S2 custom board (PCB)
 
-<img src="Images/PCB.png" width="300">
+<img src="Images/CocktailCube.jpg" width="650">
 
-
-You can download the 3D print files required for the assembly from cults, printables or makerworld. When you buy a kit or PCB from Aliexpress, the 3D print files are included!
+You can download the 3D print files required for the assembly from cults. When you buy a kit or PCB from Aliexpress, the 3D print files are included!
 
 Page | Link
 -------- | --------
-Cults: | <a href="https://cults3d.com/:XXXXXXXX">https://cults3d.com/:XXXXXXXX</a> 
-Printables: | <a href="https://printables.com/XXXXXXXX">https://printables.com/:XXXXXXXX</a> 
-Makerworld: | <a href="https://makerworld.com/XXXXXXXX">https://makerworld.com/:XXXXXXXX</a> 
+Cults: | <a href="https://cults3d.com/:XXXXXXXX">https://cults3d.com/:XXXXXXXX</a>
 
 You can buy the CocktailCube PCB from AliExpress
+
+<img src="Images/PCB.png" width="300">
 
 Version | Link
 -------- | --------
 Only PCB: | <a href="https://aliexpress.com/pcb">https://aliexpress.com/pcb</a> 
 PCB + Kit: | <a href="https://aliexpress.com/pcb+kit">https://aliexpress.com/pcb+kit</a>
+PCB + Kit + Printed Parts: | <a href="https://aliexpress.com/pcb+kit+printedparts">https://aliexpress.com/pcb+kit+printedparts</a>
 
-<img src="Images/CocktailCube.jpg" width="650">
-<img src="Images/WINEBar.jpg" width="650">
+Images:
+
+<img src="Images/WINEBar.jpg" width="400">
 
 ___
 
