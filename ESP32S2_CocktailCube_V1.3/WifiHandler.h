@@ -21,8 +21,8 @@
 #include <esp_log.h>
 #include "Config.h"
 #include "SystemHelper.h"
-#include "StateMachine.h"
 #include "SPIFFSEditor.h"
+#include "WebPageHandler.h"
 
 //===============================================================
 // Defines
@@ -81,6 +81,12 @@ class WifiHandler
 
     // Stops the web server
     void StopWebServer();
+    
+    // Returns the web domain for dns resolving
+    String GetDNSName();
+
+    // Returns the not found message
+    String GetNotFoundMessage();
 };
 
 //===============================================================

@@ -50,7 +50,7 @@ String SystemHelper::GetSystemInfoString()
   String returnString;
   
   uint32_t chipId = 0;
-	for (int i = 0; i < 17; i = i + 8)
+	for (uint8_t i = 0; i < 17; i = i + 8)
   {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
 	}
@@ -97,6 +97,10 @@ String SystemHelper::GetMemoryInfoString(bool all)
   double spiffsUsed = (double)SPIFFS.usedBytes();
   double spiffsUsage = spiffsUsed / spiffsTotal * 100.0;
 
+  double heapTotal = max(1.0, (double)ESP.getHeapSize());
+  double heapUsed = heapTotal - (double)ESP.getFreeHeap();
+  double heapUsage = heapUsed / heapTotal * 100.0;
+
   if (all)
   {
     returnString += "Flash-Size:      " + String((double)ESP.getFlashChipSize() / (1024.0 * 1024.0), 6) + " MB\n";
@@ -109,12 +113,13 @@ String SystemHelper::GetMemoryInfoString(bool all)
     returnString += "SPIFFS Ready:    " + String(SPIFFS.begin(false) ? "true\n" : "false\n");
     returnString += "SPIFFS-Total:    " + String(spiffsTotal / (1024.0 * 1024.0), 6) + " MB\n";
     returnString += "SPIFFS-Used:     " + String(spiffsUsed / (1024.0 * 1024.0), 6) + " MB (" + spiffsUsage + "%)\n";
-    returnString += "Free-Heap:       " + String((double)ESP.getFreeHeap() / (1024.0 * 1024.0), 6) + " MB\n";
+    returnString += "Heap-Total:      " + String(heapTotal / (1024.0 * 1024.0), 6) + " MB\n";
+    returnString += "Heap-Used:       " + String(heapUsed / (1024.0 * 1024.0), 6) + " MB (" + heapUsage + "%)\n";
   }
   else
   {
     returnString += "SPIFFS-Used: " + String(spiffsUsed / (1024.0 * 1024.0), 6) + " MB (" + spiffsUsage + "%), ";
-    returnString += "Free-Heap: " + String((double)ESP.getFreeHeap() / (1024.0 * 1024.0), 6) + " MB\n";
+    returnString += "Heap-Used: " + String(heapUsed / (1024.0 * 1024.0), 6) + " MB (" + heapUsage + "%)\n";
   }
 
   return returnString;
@@ -159,42 +164,44 @@ String SystemHelper::WifiPowerToString(wifi_power_t power)
 //===============================================================
 // Returns the reset reason as string
 //===============================================================
-String SystemHelper::GetResetReasonString(int cpu)
+String SystemHelper::GetResetReasonString(int8_t cpu)
 {
-  int reason = rtc_get_reset_reason(cpu);
-  
-  switch ( reason)
+  RESET_REASON reason = rtc_get_reset_reason(cpu);
+
+  switch (reason)
   {
-    case 1:
+    case POWERON_RESET:
       return "POWERON_RESET (Vbat power on reset)";
-    case 3:
+    case RTC_SW_SYS_RESET:
       return "SW_RESET (Software reset digital core)";
-    case 4:
-      return "OWDT_RESET (Legacy watch dog reset digital core)";
-    case 5:
+    case DEEPSLEEP_RESET:
       return "DEEPSLEEP_RESET (Deep Sleep reset digital core)";
-    case 6:
-      return "SDIO_RESET (Reset by SLC module, reset digital core)";
-    case 7:
+    case TG0WDT_SYS_RESET:
       return "TG0WDT_SYS_RESET (Timer Group0 Watch dog reset digital core)";
-    case 8:
+    case TG1WDT_SYS_RESET:
       return "TG1WDT_SYS_RESET (Timer Group1 Watch dog reset digital core)";
-    case 9:
+    case RTCWDT_SYS_RESET:
       return "RTCWDT_SYS_RESET (RTC Watch dog Reset digital core)";
-    case 10:
+    case INTRUSION_RESET:
       return "INTRUSION_RESET (Instrusion tested to reset CPU)";
-    case 11:
+    case TG0WDT_CPU_RESET:
       return "TGWDT_CPU_RESET (Time Group reset CPU)";
-    case 12:
+    case RTC_SW_CPU_RESET:
       return "SW_CPU_RESET (Software reset CPU)";
-    case 13:
+    case RTCWDT_CPU_RESET:
       return "RTCWDT_CPU_RESET (RTC Watch dog Reset CPU)";
-    case 14:
-      return "EXT_CPU_RESET (for APP CPU, reseted by PRO CPU)";
-    case 15:
+    case RTCWDT_BROWN_OUT_RESET:
       return "RTCWDT_BROWN_OUT_RESET (Reset when the vdd voltage is not stable)";
-    case 16:
+    case RTCWDT_RTC_RESET:
       return "RTCWDT_RTC_RESET (RTC Watch dog reset digital core and rtc module)";
+    case TG1WDT_CPU_RESET:
+      return "TG1WDT_CPU_RESET (Time Group1 reset CPU)";
+    case SUPER_WDT_RESET:
+      return "SUPER_WDT_RESET (super watchdog reset digital core and rtc module)";
+    case GLITCH_RTC_RESET:
+      return "GLITCH_RTC_RESET (glitch reset digital core and rtc module)";
+    case EFUSE_RESET:
+      return "EFUSE_RESET (efuse reset digital core)";
     default:
       return "NO_MEAN";
   }

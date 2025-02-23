@@ -42,12 +42,18 @@
 // Config makro names used for loading json config files:
 #define IS_MIXER                          "IS_MIXER"
 #define MIXER_NAME                        "MIXER_NAME"
-#define LIQUID1_NAME                      "LIQUID1_NAME"
-#define LIQUID2_NAME                      "LIQUID2_NAME"
-#define LIQUID3_NAME                      "LIQUID3_NAME"
-#define LIQUID1ANGLE_DEGREES              "LIQUID1ANGLE_DEGREES"
-#define LIQUID2ANGLE_DEGREES              "LIQUID2ANGLE_DEGREES"
-#define LIQUID3ANGLE_DEGREES              "LIQUID3ANGLE_DEGREES"
+#define LIQUID_NAME_1                     "LIQUID_NAME_1"
+#define LIQUID_NAME_2                     "LIQUID_NAME_2"
+#define LIQUID_NAME_3                     "LIQUID_NAME_3"
+#define LIQUID_ANGLE_1                    "LIQUID_ANGLE_1"
+#define LIQUID_ANGLE_2                    "LIQUID_ANGLE_2"
+#define LIQUID_ANGLE_3                    "LIQUID_ANGLE_3"
+#define LIQUID_COLOR_1                    "LIQUID_COLOR_1"
+#define LIQUID_COLOR_2                    "LIQUID_COLOR_2"
+#define LIQUID_COLOR_3                    "LIQUID_COLOR_3"
+#define TFT_COLOR_LIQUID_1                "TFT_COLOR_LIQUID_1"
+#define TFT_COLOR_LIQUID_2                "TFT_COLOR_LIQUID_2"
+#define TFT_COLOR_LIQUID_3                "TFT_COLOR_LIQUID_3"
 #define TFT_COLOR_STARTPAGE               "TFT_COLOR_STARTPAGE"
 #define TFT_COLOR_STARTPAGE_FOREGROUND    "TFT_COLOR_STARTPAGE_FOREGROUND"
 #define TFT_COLOR_STARTPAGE_BACKGROUND    "TFT_COLOR_STARTPAGE_BACKGROUND"
@@ -57,14 +63,8 @@
 #define TFT_COLOR_INFOBOX_FOREGROUND      "TFT_COLOR_INFOBOX_FOREGROUND"
 #define TFT_COLOR_INFOBOX_BACKGROUND      "TFT_COLOR_INFOBOX_BACKGROUND"
 #define TFT_COLOR_MENU_SELECTOR           "TFT_COLOR_MENU_SELECTOR"
-#define TFT_COLOR_LIQUID_1                "TFT_COLOR_LIQUID_1"
-#define TFT_COLOR_LIQUID_2                "TFT_COLOR_LIQUID_2"
-#define TFT_COLOR_LIQUID_3                "TFT_COLOR_LIQUID_3"
 #define TFT_COLOR_FOREGROUND              "TFT_COLOR_FOREGROUND"
 #define TFT_COLOR_BACKGROUND              "TFT_COLOR_BACKGROUND"
-#define WIFI_COLOR_LIQUID_1               "WIFI_COLOR_LIQUID_1"
-#define WIFI_COLOR_LIQUID_2               "WIFI_COLOR_LIQUID_2"
-#define WIFI_COLOR_LIQUID_3               "WIFI_COLOR_LIQUID_3"
 #define IMAGE_LOGO                        "IMAGE_LOGO"
 #define IMAGE_GLASS                       "IMAGE_GLASS"
 #define IMAGE_BOTTLE1                     "IMAGE_BOTTLE1"
@@ -77,6 +77,7 @@
 #define TFT_GLASS_POS_Y                   "TFT_GLASS_POS_Y"
 #define TFT_BOTTLE_POS_X                  "TFT_BOTTLE_POS_X"
 #define TFT_BOTTLE_POS_Y                  "TFT_BOTTLE_POS_Y"
+#define CYCLE_TIMESPAN                    "CYCLE_TIMESPAN"
 
 //===============================================================
 // Enums
@@ -138,14 +139,21 @@ class Configuration
     
     String mixerName;
 
-    String liquid1Name;
-    String liquid2Name;
-    String liquid3Name;
+    String liquidName1;
+    String liquidName2;
+    String liquidName3;
 
-    int16_t liquid1AngleDegrees;
-    int16_t liquid2AngleDegrees;
-    int16_t liquid3AngleDegrees;
+    int16_t liquidAngle1;
+    int16_t liquidAngle2;
+    int16_t liquidAngle3;
 
+    String liquidColor1;
+    String liquidColor2;
+    String liquidColor3;
+    
+    uint16_t tftColorLiquid1;
+    uint16_t tftColorLiquid2;
+    uint16_t tftColorLiquid3;
     uint16_t tftColorStartPage;
     uint16_t tftColorStartPageForeground;
     uint16_t tftColorStartPageBackground;
@@ -155,15 +163,8 @@ class Configuration
     uint16_t tftColorInfoBoxForeground;
     uint16_t tftColorInfoBoxBackground;
     uint16_t tftColorMenuSelector;
-    uint16_t tftColorLiquid1;
-    uint16_t tftColorLiquid2;
-    uint16_t tftColorLiquid3;
     uint16_t tftColorForeground;
     uint16_t tftColorBackground;
-
-    String wifiColorLiquid1;
-    String wifiColorLiquid2;
-    String wifiColorLiquid3;
 
     String imageLogo;
     String imageGlass;

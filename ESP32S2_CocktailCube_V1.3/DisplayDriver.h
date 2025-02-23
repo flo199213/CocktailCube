@@ -190,27 +190,6 @@ class DisplayDriver
     // Loads the images from spiffs
     void LoadImages();
 
-    // Sets the menu state
-    void SetMenuState(MixerState state);
-
-    // Sets the dashboard liquid value
-    void SetDashboardLiquid(MixtureLiquid liquid);
-
-    // Sets the cleaning liquid value
-    void SetCleaningLiquid(MixtureLiquid liquid);
-
-    // Sets the mixer setting
-    void SetMixerSetting(MixerSetting setting);
-
-    // Sets the angles values
-    void SetAngles(int16_t liquid1Angle_Degrees, int16_t liquid2Angle_Degrees, int16_t liquid3Angle_Degrees);
-
-    // Sets the percentage values
-    void SetPercentages(double liquid1_Percentage, double liquid2_Percentage, double liquid3_Percentage);
-
-    // Sets the bar stock
-    void SetBar(BarBottle barBottle1, BarBottle barBottle2, BarBottle barBottle3);
-
     // Shows intro page
     void ShowIntroPage();
     
@@ -281,39 +260,18 @@ class DisplayDriver
     SPIFFSBMPImage _imageBottle3;
     SPIFFSBMPImage _imageBottle4;
 
-    // Current mixture settings
-    MixerState _menuState = eDashboard;
-    MixtureLiquid _dashboardLiquid = eLiquid1;
-    int16_t _liquid1Angle_Degrees = 0;
-    int16_t _liquid2Angle_Degrees = 0;
-    int16_t _liquid3Angle_Degrees = 0;
-    double _liquid1_Percentage = 0.0;
-    double _liquid2_Percentage = 0.0;
-    double _liquid3_Percentage = 0.0;
-
-    // Cleaning mode settings
-    MixtureLiquid _cleaningLiquid = eLiquidAll;
-    
-    // Bar settings
-    BarBottle _barBottle1 = eRedWine;
-    BarBottle _barBottle2 = eWhiteWine;
-    BarBottle _barBottle3 = eRoseWine;
-
-    // Setting mode settings
-    MixerSetting _currentSetting = ePWM;
-        
     // Last draw values
     MixerState _lastDraw_MenuState = eDashboard;
     MixtureLiquid _lastDraw_SelectedLiquid = eLiquidNone;
-    int16_t _lastDraw_liquid1Angle_Degrees = 0;
-    int16_t _lastDraw_liquid2Angle_Degrees = 0;
-    int16_t _lastDraw_liquid3Angle_Degrees = 0;
-    double _lastDraw_liquid1_Percentage = 0.0;
-    double _lastDraw_liquid2_Percentage = 0.0;
-    double _lastDraw_liquid3_Percentage = 0.0;
-    String _lastDraw_Liquid1String = "";
-    String _lastDraw_Liquid2String = "";
-    String _lastDraw_Liquid3String = "";
+    int16_t _lastDraw_liquidAngle1 = 0;
+    int16_t _lastDraw_liquidAngle2 = 0;
+    int16_t _lastDraw_liquidAngle3 = 0;
+    double _lastDraw_liquidPercentage1 = 0.0;
+    double _lastDraw_liquidPercentage2 = 0.0;
+    double _lastDraw_liquidPercentage3 = 0.0;
+    String _lastDraw_liquidPercentage1_String = "";
+    String _lastDraw_liquidPercentage2_String = "";
+    String _lastDraw_liquidPercentage3_String = "";
     BarBottle _lastDraw_barBottle1 = eEmpty;
     BarBottle _lastDraw_barBottle2 = eEmpty;
     BarBottle _lastDraw_barBottle3 = eEmpty;
@@ -346,7 +304,7 @@ class DisplayDriver
     void FillArc(int16_t start_angle, int16_t distance_Degrees, uint16_t color);
     
     // Draws a part of the bar
-    void DrawBarPart(int16_t x0, int16_t y, MixtureLiquid liquid, BarBottle barBottle, BarBottle lastDraw_barBottle, int16_t liquid_Percentage, int16_t lastDraw_liquid_Percentage, String name, uint16_t color, bool isDashboard, bool isfullUpdate);
+    void DrawBarPart(int16_t x0, int16_t y, MixtureLiquid liquid, BarBottle barBottle, BarBottle lastDraw_barBottle, int16_t liquidPercentage, int16_t lastDraw_liquidPercentage, String name, uint16_t color, bool isDashboard, bool isfullUpdate);
     
     // Clears the difference from a bar bottle to the next bottle
     void ClearBarBottle(BarBottle lastDraw_barBottle, BarBottle barBottle, int16_t x0, int16_t y, uint16_t clearColor);
@@ -364,7 +322,7 @@ class DisplayDriver
     void DrawCenteredString(const String &text, int16_t x, int16_t y, bool underlined = false, uint16_t lineColor = 0, bool backGround = false, uint16_t backGroundColor = 0);
     
     // Formats double value
-    String FormatValue(double value, int mainPlaces, int decimalPlaces);
+    String FormatValue(double value, int16_t mainPlaces, uint16_t decimalPlaces);
 
     // Draws a star
     void DrawStar(int16_t x0, int16_t y0, bool fullStars, uint16_t color, int16_t size = 0);

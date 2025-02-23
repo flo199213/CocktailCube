@@ -162,12 +162,9 @@ wifi_mode_t WifiHandler::StartWebServer()
 {
   ESP_LOGI(TAG, "Start web server");
 
-  // Set up mDNS responder to http://[WIFI_SSID].local
-  ESP_LOGI(TAG, "Set up mDNS responde");
-  String mdnsName = String(WIFI_SSID);
-  mdnsName.toLowerCase();
-  mdnsName.trim();
-  MDNS.begin(mdnsName);
+  // Set up mDNS responder to http://cocktailcube.local
+  ESP_LOGI(TAG, "Set up mDNS responder");
+  MDNS.begin(GetDNSName());
   
   // Create web server
   ESP_LOGI(TAG, "Create web server");
@@ -181,9 +178,16 @@ wifi_mode_t WifiHandler::StartWebServer()
   ESP_LOGI(TAG, "Add root URL handler");
   _webserver->on("/", HTTP_GET, [this]()
   {
-    // Currently no index.html -> redirect to SPIFFS editor
-    _webserver->sendHeader("Location", "/edit", true);
-    _webserver->send(302);
+    // Stream index.html if existing
+    if (SPIFFS.exists("/index.html"))
+    {
+      File file = SPIFFS.open("/index.html", FILE_READ);
+      _webserver->streamFile(file, "text/html", 200);
+      file.close();
+    }
+
+    // Send not found message
+    _webserver->send(404, "text/plain; charset=utf-8", GetNotFoundMessage());
   });
 
   // Add system info handler to web server
@@ -209,6 +213,10 @@ wifi_mode_t WifiHandler::StartWebServer()
   ESP_LOGI(TAG, "Add SPIFFS handler");
   _webserver->addHandler(new SPIFFSEditor());
   
+  // Add web page handler to web server (http://[WIFI_SSID].local/control or http://192.168.1.1/control)
+  ESP_LOGI(TAG, "Add web page handler");
+  _webserver->addHandler(new WebPageHandler());
+  
   // Add static files handler to web server
   ESP_LOGI(TAG, "Add static files handler");
   _webserver->serveStatic("/", SPIFFS, "/");
@@ -217,10 +225,7 @@ wifi_mode_t WifiHandler::StartWebServer()
   ESP_LOGI(TAG, "Add not found handler");
   _webserver->onNotFound([this]()
   {
-    String domain = String(WIFI_SSID);
-    domain.toLowerCase();
-    domain.trim();
-    _webserver->send(404, "text/plain; charset=utf-8", "Sorry, page not found! Go to 'http://" + domain + ".local' or 'http://192.168.1.1/'. If you want to upload files use '/edit' as sub page.");
+    _webserver->send(404, "text/plain; charset=utf-8", GetNotFoundMessage());
   });
 
   // Start web server
@@ -249,4 +254,23 @@ void WifiHandler::StopWebServer()
   // Set web server to null
   ESP_LOGI(TAG, "Set web server to null");
   _webserver = NULL;
+}
+
+//===============================================================
+// Returns the web domain for dns resolving
+//===============================================================
+String WifiHandler::GetDNSName()
+{
+  String mdnsName = String(WIFI_SSID);
+  mdnsName.toLowerCase();
+  mdnsName.trim();
+  return mdnsName;
+}
+
+//===============================================================
+// Returns the not found message
+//===============================================================
+String WifiHandler::GetNotFoundMessage()
+{
+  return String("Sorry, page not found! Go to 'http://") + GetDNSName() + String(".local' or 'http://192.168.1.1/'. If you want to upload files use '/edit' as sub page.");
 }

@@ -65,7 +65,7 @@ void Configuration::Load()
     _preferences.end();
 
     _currentConfigindex = -1;
-    for (int index = 0; index < _fileCount; index++)
+    for (uint8_t index = 0; index < _fileCount; index++)
     {
       if (currentConfigFileName == _files[index])
       {
@@ -169,7 +169,7 @@ void Configuration::EnumerateConfigs()
   }
 
   // Open root directory
-  File rootDirectory = SPIFFS.open("/");
+  File rootDirectory = SPIFFS.open("/", FILE_READ);
 
   // Check if existing
   if (!rootDirectory)
@@ -263,12 +263,15 @@ void Configuration::ResetConfig()
 {
   Config.isMixer = true;
   Config.mixerName = "CocktailCube";
-  Config.liquid1Name = "Liquid 1";
-  Config.liquid2Name = "Liquid 2";
-  Config.liquid3Name = "Liquid 3";
-  Config.liquid1AngleDegrees = 0;
-  Config.liquid2AngleDegrees = 120;
-  Config.liquid3AngleDegrees = 240;
+  Config.liquidName1 = "Liquid 1";
+  Config.liquidName2 = "Liquid 2";
+  Config.liquidName3 = "Liquid 3";
+  Config.liquidAngle1 = 0;
+  Config.liquidAngle2 = 120;
+  Config.liquidAngle3 = 240;
+  Config.liquidColor1 = "#F70202";
+  Config.liquidColor2 = "#38F702";
+  Config.liquidColor3 = "#1B02F7";
   Config.tftColorStartPage = 0xFC00;
   Config.tftColorStartPageForeground = 0xDF9E;
   Config.tftColorStartPageBackground = 0xA6DC;
@@ -283,9 +286,6 @@ void Configuration::ResetConfig()
   Config.tftColorLiquid3 = ST77XX_BLUE;
   Config.tftColorForeground = ST77XX_WHITE;
   Config.tftColorBackground = ST77XX_BLACK;
-  Config.wifiColorLiquid1 = "0xF70202";
-  Config.wifiColorLiquid2 = "0x38F702";
-  Config.wifiColorLiquid3 = "0x1B02F7";
   Config.imageLogo = "";
   Config.imageGlass = "";
   Config.imageBottle1 = "";
@@ -310,23 +310,30 @@ bool Configuration::CheckValid(JsonDocument doc)
   
   // Check mixer config file state
   valid |= doc[IS_MIXER].is<bool>();
-  bool isMixer = doc[IS_MIXER].as<bool>();
 
   // Check mixer name
   valid |= doc[MIXER_NAME].is<String>() && doc[MIXER_NAME].as<String>().length() <= 15;
 
   // Check liquid names
-  valid |= doc[LIQUID1_NAME].is<String>() && doc[LIQUID1_NAME].as<String>().length() <= 10;
-  valid |= doc[LIQUID2_NAME].is<String>() && doc[LIQUID2_NAME].as<String>().length() <= 10;
-  valid |= doc[LIQUID3_NAME].is<String>() && doc[LIQUID3_NAME].as<String>().length() <= 10;
+  valid |= doc[LIQUID_NAME_1].is<String>() && doc[LIQUID_NAME_1].as<String>().length() <= 10;
+  valid |= doc[LIQUID_NAME_2].is<String>() && doc[LIQUID_NAME_2].as<String>().length() <= 10;
+  valid |= doc[LIQUID_NAME_3].is<String>() && doc[LIQUID_NAME_3].as<String>().length() <= 10;
   
   // Check default liquid angles
-  valid |= doc[LIQUID1ANGLE_DEGREES].is<int16_t>();
-  valid |= doc[LIQUID2ANGLE_DEGREES].is<int16_t>();
-  valid |= doc[LIQUID3ANGLE_DEGREES].is<int16_t>();
+  valid |= doc[LIQUID_ANGLE_1].is<int16_t>();
+  valid |= doc[LIQUID_ANGLE_2].is<int16_t>();
+  valid |= doc[LIQUID_ANGLE_3].is<int16_t>();
+
+  // Check liquid wifi colors
+  valid |= doc[LIQUID_COLOR_1].is<String>();
+  valid |= doc[LIQUID_COLOR_2].is<String>();
+  valid |= doc[LIQUID_COLOR_3].is<String>();
 
   // Check and convert TFT colors
   uint16_t dummyValue;
+  valid |= doc[TFT_COLOR_LIQUID_1].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_LIQUID_1].as<String>(), &dummyValue);
+  valid |= doc[TFT_COLOR_LIQUID_2].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_LIQUID_2].as<String>(), &dummyValue);
+  valid |= doc[TFT_COLOR_LIQUID_3].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_LIQUID_3].as<String>(), &dummyValue);
   valid |= doc[TFT_COLOR_STARTPAGE].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_STARTPAGE].as<String>(), &dummyValue);
   valid |= doc[TFT_COLOR_STARTPAGE_FOREGROUND].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_STARTPAGE_FOREGROUND].as<String>(), &dummyValue);
   valid |= doc[TFT_COLOR_STARTPAGE_BACKGROUND].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_STARTPAGE_BACKGROUND].as<String>(), &dummyValue);
@@ -336,16 +343,8 @@ bool Configuration::CheckValid(JsonDocument doc)
   valid |= doc[TFT_COLOR_INFOBOX_FOREGROUND].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_INFOBOX_FOREGROUND].as<String>(), &dummyValue);
   valid |= doc[TFT_COLOR_INFOBOX_BACKGROUND].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_INFOBOX_BACKGROUND].as<String>(), &dummyValue);
   valid |= doc[TFT_COLOR_MENU_SELECTOR].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_MENU_SELECTOR].as<String>(), &dummyValue);
-  valid |= doc[TFT_COLOR_LIQUID_1].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_LIQUID_1].as<String>(), &dummyValue);
-  valid |= doc[TFT_COLOR_LIQUID_2].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_LIQUID_2].as<String>(), &dummyValue);
-  valid |= doc[TFT_COLOR_LIQUID_3].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_LIQUID_3].as<String>(), &dummyValue);
   valid |= doc[TFT_COLOR_FOREGROUND].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_FOREGROUND].as<String>(), &dummyValue);
   valid |= doc[TFT_COLOR_BACKGROUND].is<String>() && TryHexStringToUint16(doc[TFT_COLOR_BACKGROUND].as<String>(), &dummyValue);
-
-  // Check liquid wifi colors
-  valid |= doc[WIFI_COLOR_LIQUID_1].is<String>();
-  valid |= doc[WIFI_COLOR_LIQUID_2].is<String>();
-  valid |= doc[WIFI_COLOR_LIQUID_3].is<String>();
 
   // Check image file names
   valid |= doc[IMAGE_LOGO].is<String>();
@@ -385,16 +384,24 @@ bool Configuration::LoadConfig(JsonDocument doc)
   Config.mixerName = doc[MIXER_NAME].as<String>();
 
   // Read liquid names
-  Config.liquid1Name = doc[LIQUID1_NAME].as<String>();
-  Config.liquid2Name = doc[LIQUID2_NAME].as<String>();
-  Config.liquid3Name = doc[LIQUID3_NAME].as<String>();
+  Config.liquidName1 = doc[LIQUID_NAME_1].as<String>();
+  Config.liquidName2 = doc[LIQUID_NAME_2].as<String>();
+  Config.liquidName3 = doc[LIQUID_NAME_3].as<String>();
 
   // Read default liquid angles
-  Config.liquid1AngleDegrees = doc[LIQUID1ANGLE_DEGREES].as<int16_t>();
-  Config.liquid2AngleDegrees = doc[LIQUID2ANGLE_DEGREES].as<int16_t>();
-  Config.liquid3AngleDegrees = doc[LIQUID3ANGLE_DEGREES].as<int16_t>();
+  Config.liquidAngle1 = doc[LIQUID_ANGLE_1].as<int16_t>();
+  Config.liquidAngle2 = doc[LIQUID_ANGLE_2].as<int16_t>();
+  Config.liquidAngle3 = doc[LIQUID_ANGLE_3].as<int16_t>();
+
+  // Read wifi colors
+  Config.liquidColor1 = doc[LIQUID_COLOR_1].as<String>();
+  Config.liquidColor2 = doc[LIQUID_COLOR_2].as<String>();
+  Config.liquidColor3 = doc[LIQUID_COLOR_3].as<String>();
 
   // Read and convert TFT colors
+  TryHexStringToUint16(doc[TFT_COLOR_LIQUID_1].as<String>(), &Config.tftColorLiquid1);
+  TryHexStringToUint16(doc[TFT_COLOR_LIQUID_2].as<String>(), &Config.tftColorLiquid2);
+  TryHexStringToUint16(doc[TFT_COLOR_LIQUID_3].as<String>(), &Config.tftColorLiquid3);
   TryHexStringToUint16(doc[TFT_COLOR_STARTPAGE].as<String>(), &Config.tftColorStartPage);
   TryHexStringToUint16(doc[TFT_COLOR_STARTPAGE_FOREGROUND].as<String>(), &Config.tftColorStartPageForeground);
   TryHexStringToUint16(doc[TFT_COLOR_STARTPAGE_BACKGROUND].as<String>(), &Config.tftColorStartPageBackground);
@@ -404,16 +411,8 @@ bool Configuration::LoadConfig(JsonDocument doc)
   TryHexStringToUint16(doc[TFT_COLOR_INFOBOX_FOREGROUND].as<String>(), &Config.tftColorInfoBoxForeground);
   TryHexStringToUint16(doc[TFT_COLOR_INFOBOX_BACKGROUND].as<String>(), &Config.tftColorInfoBoxBackground);
   TryHexStringToUint16(doc[TFT_COLOR_MENU_SELECTOR].as<String>(), &Config.tftColorMenuSelector);
-  TryHexStringToUint16(doc[TFT_COLOR_LIQUID_1].as<String>(), &Config.tftColorLiquid1);
-  TryHexStringToUint16(doc[TFT_COLOR_LIQUID_2].as<String>(), &Config.tftColorLiquid2);
-  TryHexStringToUint16(doc[TFT_COLOR_LIQUID_3].as<String>(), &Config.tftColorLiquid3);
   TryHexStringToUint16(doc[TFT_COLOR_FOREGROUND].as<String>(), &Config.tftColorForeground);
   TryHexStringToUint16(doc[TFT_COLOR_BACKGROUND].as<String>(), &Config.tftColorBackground);
-
-  // Read wifi colors
-  Config.wifiColorLiquid1 = doc[WIFI_COLOR_LIQUID_1].as<String>();
-  Config.wifiColorLiquid2 = doc[WIFI_COLOR_LIQUID_2].as<String>();
-  Config.wifiColorLiquid3 = doc[WIFI_COLOR_LIQUID_3].as<String>();
 
   // Read image file names
   Config.imageLogo = doc[IMAGE_LOGO].as<String>();

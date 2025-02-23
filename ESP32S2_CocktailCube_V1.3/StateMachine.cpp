@@ -41,32 +41,87 @@ void StateMachine::Begin(uint8_t pinBuzzer)
 
   // Set Defaults
   SetMixtureDefaults();
-
-  // Update all values
-  UpdateValues();
   
   // Log startup info
   ESP_LOGI(TAG, "Finished initializing state machine");
 }
 
 //===============================================================
-// Returns the angle for a given liquid
+// Updates cycle timespan value from wifi
 //===============================================================
-int16_t StateMachine::GetAngle(MixtureLiquid liquid)
+bool StateMachine::UpdateValuesFromWifi(uint32_t cycleTimespan_ms)
 {
-  switch (liquid)
+  // Check for min and max value
+  if (cycleTimespan_ms < MIN_CYCLE_TIMESPAN_MS ||
+    cycleTimespan_ms > MAX_CYCLE_TIMESPAN_MS)
   {
-    case eLiquid1:
-      return _liquid1Angle_Degrees;
-    case eLiquid2:
-      return _liquid2Angle_Degrees;
-    case eLiquid3:
-      return _liquid3Angle_Degrees;
-    default:
-      break;
+    return false;
   }
 
-  return -1;
+  // General new wifi cycle timespan data handler 
+  if (Pumps.SetCycleTimespan(cycleTimespan_ms))
+  {
+    // Draw new values in settings mode
+    if (_currentState == eSettings)
+    {
+      // Draw settings in partial update mode
+      Display.DrawSettings();
+    }
+
+    // Update pump values
+    UpdatePumpValues();
+  }
+
+  return true;
+}
+
+//===============================================================
+// Updates a liquid value from wifi
+//===============================================================
+bool StateMachine::UpdateValuesFromWifi(MixtureLiquid liquid, int16_t increments_Degrees)
+{
+  // Check angle for 360 degrees increment or decrement max
+  if (increments_Degrees < -360 ||
+    increments_Degrees > 360)
+  {
+    return false;
+  }
+
+  if (Config.isMixer)
+  {
+    // Increment or decrement angle
+    switch (liquid)
+    {
+      case eLiquid1:
+        IncrementAngle(&_liquidAngle1, _liquidAngle2, _liquidAngle3, increments_Degrees);
+        break;
+      case eLiquid2:
+        IncrementAngle(&_liquidAngle2, _liquidAngle3, _liquidAngle1, increments_Degrees);
+        break;
+      case eLiquid3:
+        IncrementAngle(&_liquidAngle3, _liquidAngle1, _liquidAngle2, increments_Degrees);
+        break;
+      default:
+        break;
+    }
+
+    // Draw new values in dashboard mode
+    if (_currentState == eDashboard)
+    {
+      // Draw current value string and doughnut chart in partial updating mode
+      Display.DrawCurrentValues();
+      Display.DrawDoughnutChart3(increments_Degrees > 0);
+    }
+
+    // Update pump values
+    UpdatePumpValues();
+  }
+  else
+  {
+    // Not implemented
+  }
+
+  return true;
 }
 
 //===============================================================
@@ -78,10 +133,124 @@ MixerState StateMachine::GetCurrentState()
 }
 
 //===============================================================
+// Returns the current menu state
+//===============================================================
+MixerState StateMachine::GetMenuState()
+{
+  return _currentMenuState;
+}
+
+//===============================================================
+// Returns the current dashboard liquid
+//===============================================================
+MixtureLiquid StateMachine::GetDashboardLiquid()
+{
+  return _dashboardLiquid;
+}
+
+//===============================================================
+// Returns the current cleaning liquid
+//===============================================================
+MixtureLiquid StateMachine::GetCleaningLiquid()
+{
+  return _cleaningLiquid;
+}
+
+//===============================================================
+// Returns current mixer setting
+//===============================================================
+MixerSetting StateMachine::GetMixerSetting()
+{
+  return _currentSetting;
+}
+
+//===============================================================
+// Returns the bottle of a given liquid input
+//===============================================================
+BarBottle StateMachine::GetBarBottle(uint8_t index)
+{
+  switch (index)
+  {
+    case 0:
+      return _barBottle1;
+    case 1:
+      return _barBottle2;
+    case 2:
+      return _barBottle3;
+    default:
+      return eEmpty;
+  }
+}
+
+//===============================================================
+// Returns the angle for a given liquid (used for mixer)
+//===============================================================
+int16_t StateMachine::GetAngle(MixtureLiquid liquid)
+{
+  switch (liquid)
+  {
+    case eLiquid1:
+      return _liquidAngle1;
+    case eLiquid2:
+      return _liquidAngle2;
+    case eLiquid3:
+      return _liquidAngle3;
+    default:
+      return -1;
+  }
+}
+
+//===============================================================
+// Returns the percentage for a given liquid (used for bar)
+//===============================================================
+double StateMachine::GetPercentage(MixtureLiquid liquid)
+{
+  switch (liquid)
+  {
+    case eLiquid1:
+      return _liquidPercentage1;
+    case eLiquid2:
+      return _liquidPercentage2;
+    case eLiquid3:
+      return _liquidPercentage3;
+    default:
+      return -1;
+  }
+}
+
+//===============================================================
+// Returns the current mixture a string
+//===============================================================
+String StateMachine::GetMixtureString()
+{
+  // Build string output
+  String returnString;
+  returnString += String(Config.liquidName1) + ": " + String(_liquidAngle1) + "°, ";
+  returnString += String(Config.liquidName2) + ": " + String(_liquidAngle2) + "°, ";
+  returnString += String(Config.liquidName3) + ": " + String(_liquidAngle3) + "°";
+  return returnString;
+}
+    
+//===============================================================
+// Returns need update counter
+//===============================================================
+uint16_t StateMachine::GetNeedUpdate()
+{
+  return _needUpdate;
+}
+
+//===============================================================
 // General state machine execution function
 //===============================================================
 void StateMachine::Execute(MixerEvent event)
 {
+  // If entry event update pump values before each state change
+  if (event == eEntry)
+  {
+    UpdatePumpValues();
+  }
+
+  // Run state machine
   switch (_currentState)
   {
     case eMenu:
@@ -118,9 +287,6 @@ void StateMachine::FctMenu(MixerEvent event)
   {
     case eEntry:
       {
-        // Update display and pump values
-        UpdateValues();
-
         // Show menu page
         ESP_LOGI(TAG, "Enter menu mode");
         Display.ShowMenuPage();
@@ -162,9 +328,6 @@ void StateMachine::FctMenu(MixerEvent event)
             default:
               break;
           }
-            
-          // Update display and pump values
-          UpdateValues();
 
           // Update menu
           Display.DrawMenu();
@@ -209,7 +372,7 @@ void StateMachine::FctMenu(MixerEvent event)
 //===============================================================
 void StateMachine::FctDashboard(MixerEvent event)
 {
-  switch(event)
+  switch (event)
   {
     case eEntry:
       {
@@ -310,9 +473,6 @@ void StateMachine::FctDashboard(MixerEvent event)
           }
         }
 
-        // Update display and pump values
-        UpdateValues();
-
         // Show dashboard page
         ESP_LOGI(TAG, "Enter dashboard mode");
         Display.ShowDashboardPage();
@@ -340,17 +500,21 @@ void StateMachine::FctDashboard(MixerEvent event)
             switch (_dashboardLiquid)
             {
               case eLiquid1:
-                IncrementAngle(&_liquid1Angle_Degrees, _liquid2Angle_Degrees, _liquid3Angle_Degrees, currentEncoderIncrements * STEPANGLE_DEGREES);
+                IncrementAngle(&_liquidAngle1, _liquidAngle2, _liquidAngle3, currentEncoderIncrements * STEPANGLE_DEGREES);
                 break;
               case eLiquid2:
-                IncrementAngle(&_liquid2Angle_Degrees, _liquid3Angle_Degrees, _liquid1Angle_Degrees, currentEncoderIncrements * STEPANGLE_DEGREES);
+                IncrementAngle(&_liquidAngle2, _liquidAngle3, _liquidAngle1, currentEncoderIncrements * STEPANGLE_DEGREES);
                 break;
               case eLiquid3:
-                IncrementAngle(&_liquid3Angle_Degrees, _liquid1Angle_Degrees, _liquid2Angle_Degrees, currentEncoderIncrements * STEPANGLE_DEGREES);
+                IncrementAngle(&_liquidAngle3, _liquidAngle1, _liquidAngle2, currentEncoderIncrements * STEPANGLE_DEGREES);
                 break;
               default:
                 break;
             }
+            
+            // Draw current value string and doughnut chart in partial updating mode
+            Display.DrawCurrentValues();
+            Display.DrawDoughnutChart3(currentEncoderIncrements > 0);
           }
           else
           {
@@ -358,33 +522,24 @@ void StateMachine::FctDashboard(MixerEvent event)
             switch (_dashboardLiquid)
             {
               case eLiquid1:
-                _liquid1_Percentage = max(min((int16_t)_liquid1_Percentage + currentEncoderIncrements, 95), 0);
+                _liquidPercentage1 = max(min((int16_t)_liquidPercentage1 + currentEncoderIncrements, 95), 0);
                 break;
               case eLiquid2:
-                _liquid2_Percentage = max(min((int16_t)_liquid2_Percentage + currentEncoderIncrements, 95), 0);
+                _liquidPercentage2 = max(min((int16_t)_liquidPercentage2 + currentEncoderIncrements, 95), 0);
                 break;
               case eLiquid3:
-                _liquid3_Percentage = max(min((int16_t)_liquid3_Percentage + currentEncoderIncrements, 95), 0);
+                _liquidPercentage3 = max(min((int16_t)_liquidPercentage3 + currentEncoderIncrements, 95), 0);
                 break;
               default:
                 break;
             }
-          }
 
-          // Update display and pump values
-          UpdateValues();
-
-          if (Config.isMixer)
-          {
-            // Draw current value string and doughnut chart in partial updating mode
-            Display.DrawCurrentValues();
-            Display.DrawDoughnutChart3(currentEncoderIncrements > 0);
-          }
-          else
-          {
             // Draw bar
             Display.DrawBar(true);
           }
+
+          // Update pump values
+          UpdatePumpValues();
         }
 
         // Check for button press
@@ -397,6 +552,10 @@ void StateMachine::FctDashboard(MixerEvent event)
           {
             // Incrementing the setting value taking into account the overflow
             _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
+
+            // Draw legend and doughnut chart in partial updating mode
+            Display.DrawLegend();
+            Display.DrawDoughnutChart3(false);
           }
           else
           {
@@ -431,21 +590,12 @@ void StateMachine::FctDashboard(MixerEvent event)
               }
             }
             while (secureCounter++ < 3);
-          }
 
-          // Update all values
-          UpdateValues();
-          
-          if (Config.isMixer)
-          {
-            // Draw legend and doughnut chart in partial updating mode
-            Display.DrawLegend();
-            Display.DrawDoughnutChart3(false);
-          }
-          else
-          {
             // Draw bar
             Display.DrawBar(true);
+          
+            // Update pump values
+            UpdatePumpValues();
           }
 
           // Debounce settings change
@@ -496,9 +646,6 @@ void StateMachine::FctCleaning(MixerEvent event)
   {
     case eEntry:
       {
-        // Update display and pump values
-        UpdateValues();
-
         // Show cleaning page
         ESP_LOGI(TAG, "Enter cleaning mode");
         Display.ShowCleaningPage();
@@ -522,8 +669,8 @@ void StateMachine::FctCleaning(MixerEvent event)
           // Incrementing the setting value taking into account the overflow
           _cleaningLiquid = _cleaningLiquid + 1 >= (MixtureLiquid)MixtureLiquidCleaningMax ? eLiquid1 : (MixtureLiquid)(_cleaningLiquid + 1);
 
-          // Update display and pump values
-          UpdateValues();
+          // Update pump values
+          UpdatePumpValues();
 
           // Draw checkboxes
           Display.DrawCheckBoxes(_cleaningLiquid);
@@ -578,10 +725,7 @@ void StateMachine::FctReset(MixerEvent event)
       {
         // Reset mixture
         SetMixtureDefaults();
-        
-        // Update all values
-        UpdateValues();
-        
+
         // Draw reset info box over current page
         ESP_LOGI(TAG, "Enter reset mode");
         Display.DrawInfoBox("Mixture", "reset!");
@@ -622,9 +766,6 @@ void StateMachine::FctBar(MixerEvent event)
   {
     case eEntry:
       {        
-        // Update all values
-        UpdateValues();
-        
         // Show bar page
         ESP_LOGI(TAG, "Enter Bar mode");
         Display.ShowBarPage();
@@ -694,9 +835,6 @@ void StateMachine::FctBar(MixerEvent event)
 
           // Short beep sound
           tone(_pinBuzzer, 500, 40);
-
-          // Update display and pump values
-          UpdateValues();
           
           // Draw bar
           Display.DrawBar(false);
@@ -716,9 +854,6 @@ void StateMachine::FctBar(MixerEvent event)
 
           // Incrementing the setting value taking into account the overflow
           _dashboardLiquid = _dashboardLiquid + 1 >= (MixtureLiquid)MixtureLiquidDashboardMax ? eLiquid1 : (MixtureLiquid)(_dashboardLiquid + 1);
-
-          // Update all values
-          UpdateValues();
           
           // Draw bar
           Display.DrawBar(false);
@@ -768,9 +903,6 @@ void StateMachine::FctSettings(MixerEvent event)
   {
     case eEntry:
       {
-        // Update display and pump values
-        UpdateValues();
-
         // Update configurations
         Config.EnumerateConfigs();
 
@@ -828,6 +960,9 @@ void StateMachine::FctSettings(MixerEvent event)
                   // Reset config if loading failed
                   Config.ResetConfig();
                 }
+                
+                // Increment need update counter fpr wifi clients
+                _needUpdate++;
 
                 // Reset mixture
                 SetMixtureDefaults();
@@ -853,9 +988,6 @@ void StateMachine::FctSettings(MixerEvent event)
 
           // Incrementing the setting value taking into account the overflow
           _currentSetting = (uint16_t)_currentSetting + 1 >= MixerSettingMax ? ePWM : (MixerSetting)(_currentSetting + 1);
-
-          // Update all values
-          UpdateValues();
           
           // Draw settings
           Display.DrawSettings();
@@ -913,10 +1045,7 @@ void StateMachine::FctScreenSaver(MixerEvent event)
   switch(event)
   {
     case eEntry:
-      {
-        // Update display and pump values
-        UpdateValues();
-        
+      {        
         // Show screen saver page
         ESP_LOGI(TAG, "Enter screen saver mode");
         Display.ShowScreenSaverPage();
@@ -960,133 +1089,100 @@ void StateMachine::FctScreenSaver(MixerEvent event)
 void StateMachine::SetMixtureDefaults()
 { 
   // Set mixture to default
-  _liquid1Angle_Degrees = Config.liquid1AngleDegrees;
-  _liquid2Angle_Degrees = Config.liquid2AngleDegrees;
-  _liquid3Angle_Degrees = Config.liquid3AngleDegrees;
+  _liquidAngle1 = Config.liquidAngle1;
+  _liquidAngle2 = Config.liquidAngle2;
+  _liquidAngle3 = Config.liquidAngle3;
+  
+  // Reset bar mode percentages
+  _liquidPercentage1 = 0;
+  _liquidPercentage2 = 0;
+  _liquidPercentage3 = 0;
+  
+  // Update pump values
+  UpdatePumpValues();
 }
 
 //===============================================================
-// Updates all values in display, pumps driver and wifi
+// Updates pump driver values
 //===============================================================
-void StateMachine::UpdateValues()
+void StateMachine::UpdatePumpValues()
 {
-  if (Config.isMixer)
-  {
-    int16_t liquid1Distance_Degrees = GetDistanceDegrees(_liquid1Angle_Degrees, _liquid2Angle_Degrees);
-    int16_t liquid2Distance_Degrees = GetDistanceDegrees(_liquid2Angle_Degrees, _liquid3Angle_Degrees);
-    int16_t liquid3Distance_Degrees = GetDistanceDegrees(_liquid3Angle_Degrees, _liquid1Angle_Degrees);
+  // Default is zero
+  double pumpPercentage1 = 0.0;
+  double pumpPercentage2 = 0.0;
+  double pumpPercentage3 = 0.0;
 
-    // Avoid minimal setable value >0%. If an angle is at its min angle, mute
-    // it to zero and add the angle distance to the greater one of the two others
-    if (liquid1Distance_Degrees == MINANGLE_DEGREES)
-    {
-      if (liquid2Distance_Degrees > liquid3Distance_Degrees)
-      {
-        liquid2Distance_Degrees += liquid1Distance_Degrees;
-      }
-      else
-      {
-        liquid3Distance_Degrees += liquid1Distance_Degrees;
-      }
-      liquid1Distance_Degrees = 0;
-    }
-
-    // Avoid minimal setable value >0%. If an angle is at its min angle, mute
-    // it to zero and add the angle distance to the greater one of the two others
-    if (liquid2Distance_Degrees == MINANGLE_DEGREES)
-    {
-      if (liquid1Distance_Degrees > liquid3Distance_Degrees)
-      {
-        liquid1Distance_Degrees += liquid2Distance_Degrees;
-      }
-      else
-      {
-        liquid3Distance_Degrees += liquid2Distance_Degrees;
-      }
-      liquid2Distance_Degrees = 0;
-    }
-
-    // Avoid minimal setable value >0%. If an angle is at its min angle, mute
-    // it to zero and add the angle distance to the greater one of the two others
-    if (liquid3Distance_Degrees == MINANGLE_DEGREES)
-    {
-      if (liquid1Distance_Degrees > liquid2Distance_Degrees)
-      {
-        liquid1Distance_Degrees += liquid3Distance_Degrees;
-      }
-      else
-      {
-        liquid2Distance_Degrees += liquid3Distance_Degrees;
-      }
-      liquid3Distance_Degrees = 0;
-    }
-
-    // Calculate percentage values
-    _liquid1_Percentage = (double)liquid1Distance_Degrees * 100.0 / 360.0;
-    _liquid2_Percentage = (double)liquid2Distance_Degrees * 100.0 / 360.0;
-    _liquid3_Percentage = (double)liquid3Distance_Degrees * 100.0 / 360.0;
-  }
-
-  // Update display driver
-  Display.SetMenuState(_currentMenuState);
-  Display.SetDashboardLiquid(_dashboardLiquid);
-  Display.SetCleaningLiquid(_cleaningLiquid);
-  Display.SetMixerSetting(_currentSetting);
-  Display.SetBar(_barBottle1, _barBottle2, _barBottle3);
-  Display.SetAngles(_liquid1Angle_Degrees, _liquid2Angle_Degrees, _liquid3Angle_Degrees);
-  Display.SetPercentages(_liquid1_Percentage, _liquid2_Percentage, _liquid3_Percentage);
-  
-  bool hasSparklingWater = _barBottle1 == eSparklingWater || _barBottle2 == eSparklingWater || _barBottle3 == eSparklingWater;
-  
-  // Update pump driver
+  // Update pump driver depending on mixer state
   switch (_currentState)
   {
     case eDashboard:
       {
         if (Config.isMixer)
         {
-          Pumps.SetPumps(_liquid1_Percentage, _liquid2_Percentage, _liquid3_Percentage);
+          int16_t liquid1Distance_Degrees = GetDistanceDegrees(_liquidAngle1, _liquidAngle2);
+          int16_t liquid2Distance_Degrees = GetDistanceDegrees(_liquidAngle2, _liquidAngle3);
+          int16_t liquid3Distance_Degrees = GetDistanceDegrees(_liquidAngle3, _liquidAngle1);
+
+          // Mute angle if below min angle
+          MuteMinAngle(&liquid1Distance_Degrees, &liquid2Distance_Degrees, &liquid3Distance_Degrees);
+          MuteMinAngle(&liquid2Distance_Degrees, &liquid1Distance_Degrees, &liquid3Distance_Degrees);
+          MuteMinAngle(&liquid3Distance_Degrees, &liquid1Distance_Degrees, &liquid2Distance_Degrees);
+
+          // Calculate pump percentage values
+          pumpPercentage1 = (double)liquid1Distance_Degrees * 100.0 / 360.0;
+          pumpPercentage2 = (double)liquid2Distance_Degrees * 100.0 / 360.0;
+          pumpPercentage3 = (double)liquid3Distance_Degrees * 100.0 / 360.0;
         }
         else
         {
-          if (hasSparklingWater)
+          // Check for any sparkling water connected
+          if (_barBottle1 == eSparklingWater ||
+            _barBottle2 == eSparklingWater ||
+            _barBottle3 == eSparklingWater)
           {
+            // Set sparkling water percentage if connected
+            pumpPercentage1 = _barBottle1 == eSparklingWater ? _liquidPercentage1 : 0.0;
+            pumpPercentage2 = _barBottle2 == eSparklingWater ? _liquidPercentage2 : 0.0;
+            pumpPercentage3 = _barBottle3 == eSparklingWater ? _liquidPercentage3 : 0.0;
+
             switch (_dashboardLiquid)
             {
               case eLiquid1:
                 {
-                  double sparklingWaterPercetage = _liquid1_Percentage;
-                  double winePercetage = 100.0 - sparklingWaterPercetage;
-                  Pumps.SetPumps(winePercetage, _barBottle2 == eSparklingWater ? sparklingWaterPercetage : 0.0, _barBottle3 == eSparklingWater ? sparklingWaterPercetage : 0.0);
+                  // Overwrite percentage 1 with its wine percentage
+                  pumpPercentage1 = 100.0 - _liquidPercentage1;
                 }
                 break;
               case eLiquid2:
                 {
-                  double sparklingWaterPercetage = _liquid2_Percentage;
-                  double winePercetage = 100.0 - sparklingWaterPercetage;
-                  Pumps.SetPumps(_barBottle1 == eSparklingWater ? sparklingWaterPercetage : 0.0, winePercetage, _barBottle3 == eSparklingWater ? sparklingWaterPercetage : 0.0);
+                  // Overwrite percentage 2 with its wine percentage
+                  pumpPercentage2 = 100.0 - _liquidPercentage2;
                 }
                 break;
               case eLiquid3:
                 {
-                  double sparklingWaterPercetage = _liquid3_Percentage;
-                  double winePercetage = 100.0 - sparklingWaterPercetage;
-                  Pumps.SetPumps(_barBottle1 == eSparklingWater ? sparklingWaterPercetage : 0.0, _barBottle2 == eSparklingWater ? sparklingWaterPercetage : 0.0, winePercetage);
+                  // Overwrite percentage 3 with its wine percentage
+                  pumpPercentage3 = 100.0 - _liquidPercentage3;
                 }
                 break;
               default:
                 break;
             }
           }
+          else
+          {
+            pumpPercentage1 = _dashboardLiquid == eLiquid1 ? 100.0 : 0.0;
+            pumpPercentage2 = _dashboardLiquid == eLiquid2 ? 100.0 : 0.0;
+            pumpPercentage3 = _dashboardLiquid == eLiquid3 ? 100.0 : 0.0;
+          }
         }
       }
       break;
     case eCleaning:
       {
-        double cleaningLiquid1_Percentage = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid1) ? 100.0 : 0.0;
-        double cleaningLiquid2_Percentage = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid2) ? 100.0 : 0.0;
-        double cleaningLiquid3_Percentage = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid3) ? 100.0 : 0.0;
-        Pumps.SetPumps(cleaningLiquid1_Percentage, cleaningLiquid2_Percentage, cleaningLiquid3_Percentage);
+        pumpPercentage1 = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid1) ? 100.0 : 0.0;
+        pumpPercentage2 = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid2) ? 100.0 : 0.0;
+        pumpPercentage3 = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid3) ? 100.0 : 0.0;
       }
       break;
     default:
@@ -1094,34 +1190,33 @@ void StateMachine::UpdateValues()
     case eReset:
     case eBar:
     case eSettings:
-      {
-        Pumps.SetPumps(0.0, 0.0, 0.0); // zero (0%)
-      }
+      // Leave pumps at zero (0%)
       break;
   }
+
+  // Set values in pumps driver
+  Pumps.SetPumps(pumpPercentage1, pumpPercentage2, pumpPercentage3);
 }
 
 //===============================================================
-// Returns the current mixture a string
+// Sets the angle to zero if below min angle and adds the value 
+// to the bigger other angle
 //===============================================================
-String StateMachine::GetMixtureString()
+void StateMachine::MuteMinAngle(int16_t* angleToMute, int16_t* otherAngle1, int16_t* otherAngle2)
 {
-  // Calculate sum
-  double sum_Percentage = _liquid1_Percentage + _liquid2_Percentage + _liquid3_Percentage;
-  
-  // Build string output
-  String returnString;
-
-  returnString += String(Config.liquid1Name) + ": " + String(_liquid1_Percentage) + "% (" + String(_liquid1Angle_Degrees) + "°), ";
-  returnString += String(Config.liquid2Name) + ": " + String(_liquid2_Percentage) + "% (" + String(_liquid2Angle_Degrees) + "°), ";
-  returnString += String(Config.liquid3Name) + ": " + String(_liquid3_Percentage) + "% (" + String(_liquid3Angle_Degrees) + "°), ";
-  returnString += "Sum: " + String(sum_Percentage) + "%";
-  
-  if ((sum_Percentage - 100.0) > 0.1 || (sum_Percentage - 100.0) < -0.1)
+  // Avoid that the minimal setable angle value is bigger than 0% -> If an
+  // angle is at its min angle, mute it to zero and add the angle distance
+  // to the greater one of the two others
+  if (*angleToMute <= MINANGLE_DEGREES)
   {
-    // Percentage error
-    returnString += " Error: Sum of all percentages must be ~100%";
+    if (*otherAngle1 > *otherAngle2)
+    {
+      *otherAngle1 += *angleToMute;
+    }
+    else
+    {
+      *otherAngle2 += *angleToMute;
+    }
+    *angleToMute = 0;
   }
-
-  return returnString;
 }

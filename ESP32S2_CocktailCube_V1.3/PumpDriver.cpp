@@ -212,7 +212,7 @@ bool PumpDriver::SetCycleTimespan(uint32_t value_ms)
 {
   // Check for min and max value
   if (value_ms < MIN_CYCLE_TIMESPAN_MS ||
-  value_ms > MAX_CYCLE_TIMESPAN_MS)
+    value_ms > MAX_CYCLE_TIMESPAN_MS)
   {
     return false;
   }

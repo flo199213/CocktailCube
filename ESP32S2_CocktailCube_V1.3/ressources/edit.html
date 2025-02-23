@@ -404,12 +404,15 @@ function createFileTree(element)
   // Shows the contect menu
   function showContextMenu(event, path)
   {
+    // Remove all existing context menus
+    removeAllContextMenus();
+  
     // Create new div
     var divContext = document.createElement("div");
     var scrollTop = document.body.scrollTop ? document.body.scrollTop : document.documentElement.scrollTop;
     var scrollLeft = document.body.scrollLeft ? document.body.scrollLeft : document.documentElement.scrollLeft;
-    var left = event.clientX + scrollLeft;
-    var top = event.clientY + scrollTop;
+    var left = event.clientX + scrollLeft - 2;
+    var top = event.clientY + scrollTop - 2;
     divContext.className = 'contextMenu';
     divContext.style.display = 'block';
     divContext.style.left = left + 'px';
@@ -428,12 +431,19 @@ function createFileTree(element)
     {
       if (e.clientX < left || e.clientX > (left + width) || e.clientY < top || e.clientY > (top + height))
       {
-        if (document.body.getElementsByClassName('contextMenu').length > 0)
-        {
-          document.body.removeChild(divContext);
-        }
+        removeAllContextMenus();
       }
     };
+  }
+  
+  function removeAllContextMenus()
+  {
+    var contextMenus = document.body.getElementsByClassName('contextMenu');
+    
+    Array.from(contextMenus).forEach(contextMenu =>
+    {
+      document.body.removeChild(contextMenu);
+    });
   }
 
   // Creates a tree leaf with the file name
@@ -448,6 +458,12 @@ function createFileTree(element)
     label.innerHTML = name;
     leaf.appendChild(label);
     
+    leaf.onclick = function(e)
+    {
+      e.preventDefault();
+      e.stopPropagation();
+      showContextMenu(e, leaf.id);
+    };
     leaf.oncontextmenu = function(e)
     {
       e.preventDefault();

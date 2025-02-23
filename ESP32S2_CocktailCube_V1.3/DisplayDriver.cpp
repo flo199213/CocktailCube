@@ -100,68 +100,6 @@ void DisplayDriver::LoadImage(SPIFFSBMPImage* _image, String fileName)
 }
 
 //===============================================================
-// Sets the menu state
-//===============================================================
-void DisplayDriver::SetMenuState(MixerState state)
-{
-  _menuState = state;
-}
-
-//===============================================================
-// Sets the current liquid value
-//===============================================================
-void DisplayDriver::SetDashboardLiquid(MixtureLiquid liquid)
-{
-  _dashboardLiquid = liquid;
-}
-
-//===============================================================
-// Sets the cleaning liquid value
-//===============================================================
-void DisplayDriver::SetCleaningLiquid(MixtureLiquid liquid)
-{
-  _cleaningLiquid = liquid;
-}
-
-//===============================================================
-// Sets the mixer setting
-//===============================================================
-void DisplayDriver::SetMixerSetting(MixerSetting setting)
-{
-  _currentSetting = setting;
-}
-
-//===============================================================
-// Sets the angles values
-//===============================================================
-void DisplayDriver::SetAngles(int16_t liquid1Angle_Degrees, int16_t liquid2Angle_Degrees, int16_t liquid3Angle_Degrees)
-{
-  _liquid1Angle_Degrees = liquid1Angle_Degrees;
-  _liquid2Angle_Degrees = liquid2Angle_Degrees;
-  _liquid3Angle_Degrees = liquid3Angle_Degrees;
-}
-
-//===============================================================
-// Sets the percentage values
-//===============================================================
-void DisplayDriver::SetPercentages(double liquid1_Percentage, double liquid2_Percentage, double liquid3_Percentage)
-{
-  _liquid1_Percentage = liquid1_Percentage;
-  _liquid2_Percentage = liquid2_Percentage;
-  _liquid3_Percentage = liquid3_Percentage;
-}
-
-//===============================================================
-// Sets the bar stock
-//===============================================================
-void DisplayDriver::SetBar(BarBottle barBottle1, BarBottle barBottle2, BarBottle barBottle3)
-{
-  _barBottle1 = barBottle1;
-  _barBottle2 = barBottle2;
-  _barBottle3 = barBottle3;
-}
-
-//===============================================================
 // Shows intro page
 //===============================================================
 void DisplayDriver::ShowIntroPage()
@@ -237,13 +175,13 @@ void DisplayDriver::ShowHelpPage()
   _tft->print(" -> Change Setting");
   _tft->setCursor(x, y += SHORTLINEOFFSET);
   _tft->print("    ~ ");
-  _tft->print(Config.liquid1Name);
+  _tft->print(Config.liquidName1);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
   _tft->print("    ~ ");
-  _tft->print(Config.liquid2Name);
+  _tft->print(Config.liquidName2);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
   _tft->print("    ~ ");
-  _tft->print(Config.liquid3Name);
+  _tft->print(Config.liquidName3);
   
   _tft->setCursor(x, y += LONGLINEOFFSET);
   _tft->print("Rotate:");
@@ -335,8 +273,10 @@ void DisplayDriver::ShowCleaningPage()
   _tft->setTextColor(Config.tftColorForeground);
   DrawCenteredString("Select pumps for cleaning:", x, y);
 
+  MixtureLiquid cleaningLiquid = Statemachine.GetCleaningLiquid();
+
   // Draw checkboxes
-  DrawCheckBoxes(_cleaningLiquid);
+  DrawCheckBoxes(cleaningLiquid);
 }
 
 //===============================================================
@@ -391,7 +331,7 @@ void DisplayDriver::ShowSettingsPage()
   // Draw liquid 1 flow meter value
   _tft->setTextColor(Config.tftColorLiquid1);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
-  _tft->print(Config.liquid1Name);
+  _tft->print(Config.liquidName1);
   _tft->print(":");
   _tft->setCursor(x + 120, y);
   _tft->print(FormatValue(valueLiquid1, 4, 2));
@@ -400,7 +340,7 @@ void DisplayDriver::ShowSettingsPage()
   // Draw liquid 2 flow meter value
   _tft->setTextColor(Config.tftColorLiquid2);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
-  _tft->print(Config.liquid2Name);
+  _tft->print(Config.liquidName2);
   _tft->print(":");
   _tft->setCursor(x + 120, y);
   _tft->print(FormatValue(valueLiquid2, 4, 2));
@@ -409,7 +349,7 @@ void DisplayDriver::ShowSettingsPage()
   // Draw liquid 3 flow meter value
   _tft->setTextColor(Config.tftColorLiquid3);
   _tft->setCursor(x, y += SHORTLINEOFFSET);
-  _tft->print(Config.liquid3Name);
+  _tft->print(Config.liquidName3);
   _tft->print(":");
   _tft->setCursor(x + 120, y);
   _tft->print(FormatValue(valueLiquid3, 4, 2));
@@ -597,7 +537,9 @@ void DisplayDriver::DrawMenu(bool isfullUpdate)
     _tft->print("Settings");
   }
 
-  if (_lastDraw_MenuState != _menuState || isfullUpdate)
+  MixerState menuState = Statemachine.GetMenuState();
+
+  if (_lastDraw_MenuState != menuState || isfullUpdate)
   {
     uint16_t offsetIndex = (uint16_t)_lastDraw_MenuState - 1;
     if (!Config.isMixer &&
@@ -615,9 +557,9 @@ void DisplayDriver::DrawMenu(bool isfullUpdate)
     // Reset old menu selection on display
     _tft->drawRoundRect(x, y, width, height, MENU_SELECTOR_CORNERRADIUS, Config.tftColorBackground);
 
-    offsetIndex = (uint16_t)_menuState - 1;
+    offsetIndex = (uint16_t)menuState - 1;
     if (!Config.isMixer &&
-      _menuState == eBar)
+      menuState == eBar)
     {
       // Fix for bar stock (enum index 6)
       offsetIndex = 2;
@@ -629,7 +571,7 @@ void DisplayDriver::DrawMenu(bool isfullUpdate)
     _tft->drawRoundRect(x, y, width, height, MENU_SELECTOR_CORNERRADIUS, Config.tftColorMenuSelector);
 
     // Save last state
-    _lastDraw_MenuState = _menuState;
+    _lastDraw_MenuState = menuState;
   }
 }
 
@@ -642,44 +584,53 @@ void DisplayDriver::DrawBar(bool isDashboard, bool isfullUpdate)
   int16_t x0 = TFT_WIDTH / 2; // Mid screen
   int16_t y = HEADEROFFSET_Y + 10;
 
+  MixtureLiquid dashboardLiquid = Statemachine.GetDashboardLiquid();
+  BarBottle barBottle1 = Statemachine.GetBarBottle(0);
+  BarBottle barBottle2 = Statemachine.GetBarBottle(1);
+  BarBottle barBottle3 = Statemachine.GetBarBottle(2);
+
+  double liquidPercentage1 = Statemachine.GetPercentage(eLiquid1);
+  double liquidPercentage2 = Statemachine.GetPercentage(eLiquid2);
+  double liquidPercentage3 = Statemachine.GetPercentage(eLiquid3);
+
   // Draw only check boxes if complete bar stock is empty
   if (isDashboard &&
-    _barBottle1 == eEmpty &&
-    _barBottle2 == eEmpty &&
-    _barBottle3 == eEmpty)
+    barBottle1 == eEmpty &&
+    barBottle2 == eEmpty &&
+    barBottle3 == eEmpty)
   {
     // Print selection text
     _tft->setTextColor(Config.tftColorForeground);
     DrawCenteredString("Select WINE for dispensing:", x0, y + 25, false, 0, true, 0x528A); // Gray
 
     // Draw checkboxes
-    DrawCheckBoxes(_dashboardLiquid);
+    DrawCheckBoxes(dashboardLiquid);
   }
   else
   {
     // Draw each bottle
-    DrawBarPart(x0 - spacing, y, eLiquid1, _barBottle1, _lastDraw_barBottle1, _liquid1_Percentage, _lastDraw_liquid1_Percentage, Config.liquid1Name, Config.tftColorLiquid1, isDashboard, isfullUpdate);
-    DrawBarPart(x0,           y, eLiquid2, _barBottle2, _lastDraw_barBottle2, _liquid2_Percentage, _lastDraw_liquid2_Percentage, Config.liquid2Name, Config.tftColorLiquid2, isDashboard, isfullUpdate);
-    DrawBarPart(x0 + spacing, y, eLiquid3, _barBottle3, _lastDraw_barBottle3, _liquid3_Percentage, _lastDraw_liquid3_Percentage, Config.liquid3Name, Config.tftColorLiquid3, isDashboard, isfullUpdate);
+    DrawBarPart(x0 - spacing, y, eLiquid1, barBottle1, _lastDraw_barBottle1, liquidPercentage1, _lastDraw_liquidPercentage1, Config.liquidName1, Config.tftColorLiquid1, isDashboard, isfullUpdate);
+    DrawBarPart(x0,           y, eLiquid2, barBottle2, _lastDraw_barBottle2, liquidPercentage2, _lastDraw_liquidPercentage2, Config.liquidName2, Config.tftColorLiquid2, isDashboard, isfullUpdate);
+    DrawBarPart(x0 + spacing, y, eLiquid3, barBottle3, _lastDraw_barBottle3, liquidPercentage3, _lastDraw_liquidPercentage3, Config.liquidName3, Config.tftColorLiquid3, isDashboard, isfullUpdate);
 
     if (isDashboard &&
-      (isfullUpdate || _dashboardLiquid != _lastDraw_SelectedLiquid))
+      (isfullUpdate || dashboardLiquid != _lastDraw_SelectedLiquid))
     {
       // Print selection text
       _tft->setTextColor(Config.tftColorForeground);
       DrawCenteredString("Select WINE for dispensing:", x0, y + 25, false, 0, true, 0x528A); // Gray
     }
 
-    _lastDraw_SelectedLiquid = _dashboardLiquid;
-    _lastDraw_barBottle1 = _barBottle1;
-    _lastDraw_barBottle2 = _barBottle2;
-    _lastDraw_barBottle3 = _barBottle3;
-    _lastDraw_liquid1_Percentage = _liquid1_Percentage;
-    _lastDraw_liquid2_Percentage = _liquid2_Percentage;
-    _lastDraw_liquid3_Percentage = _liquid3_Percentage;
+    _lastDraw_SelectedLiquid = dashboardLiquid;
+    _lastDraw_barBottle1 = barBottle1;
+    _lastDraw_barBottle2 = barBottle2;
+    _lastDraw_barBottle3 = barBottle3;
+    _lastDraw_liquidPercentage1 = liquidPercentage1;
+    _lastDraw_liquidPercentage2 = liquidPercentage2;
+    _lastDraw_liquidPercentage3 = liquidPercentage3;
   }
 
-  ESP_LOGI(TAG, "_barBottles: %d %d %d", _barBottle1, _barBottle2, _barBottle3);
+  ESP_LOGI(TAG, "_barBottles: %d %d %d", barBottle1, barBottle2, barBottle3);
 }
 
 //===============================================================
@@ -707,11 +658,11 @@ void DisplayDriver::DrawCheckBoxes(MixtureLiquid liquid)
 
   // Draw liquid names
   _tft->setTextColor(Config.tftColorLiquid1);
-  DrawCenteredString(Config.liquid1Name, x0 - spacing, y);
+  DrawCenteredString(Config.liquidName1, x0 - spacing, y);
   _tft->setTextColor(Config.tftColorLiquid2);
-  DrawCenteredString(Config.liquid2Name, x0, y);
+  DrawCenteredString(Config.liquidName2, x0, y);
   _tft->setTextColor(Config.tftColorLiquid3);
-  DrawCenteredString(Config.liquid3Name, x0 + spacing, y);
+  DrawCenteredString(Config.liquidName3, x0 + spacing, y);
 }
 
 //===============================================================
@@ -747,12 +698,14 @@ void DisplayDriver::DrawLegend()
   x = X_LEGEND + WIDTH_LEGEND / 2;
   y = Y_LEGEND + marginTop + marginBetween;
 
+  MixtureLiquid dashboardLiquid = Statemachine.GetDashboardLiquid();
+
   // Draw liquid text
   _tft->setTextSize(1);
   _tft->setTextColor(Config.tftColorTextBody);  
-  DrawCenteredString(Config.liquid1Name, x, y,                    true, _dashboardLiquid == eLiquid1 ? Config.tftColorForeground : Config.tftColorBackground, false, 0);
-  DrawCenteredString(Config.liquid2Name, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid2 ? Config.tftColorForeground : Config.tftColorBackground, false, 0);
-  DrawCenteredString(Config.liquid3Name, x, y += LOONGLINEOFFSET, true, _dashboardLiquid == eLiquid3 ? Config.tftColorForeground : Config.tftColorBackground, false, 0);
+  DrawCenteredString(Config.liquidName1, x, y,                    true, dashboardLiquid == eLiquid1 ? Config.tftColorForeground : Config.tftColorBackground, false, 0);
+  DrawCenteredString(Config.liquidName2, x, y += LOONGLINEOFFSET, true, dashboardLiquid == eLiquid2 ? Config.tftColorForeground : Config.tftColorBackground, false, 0);
+  DrawCenteredString(Config.liquidName3, x, y += LOONGLINEOFFSET, true, dashboardLiquid == eLiquid3 ? Config.tftColorForeground : Config.tftColorBackground, false, 0);
 }
 
 //===============================================================
@@ -760,9 +713,13 @@ void DisplayDriver::DrawLegend()
 //===============================================================
 void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
 {
-  String liquid1_PercentageString = FormatValue(_liquid1_Percentage, 2, 0) + String("%");
-  String liquid2_PercentageString = FormatValue(_liquid2_Percentage, 2, 0) + String("%");
-  String liquid3_PercentageString = FormatValue(_liquid3_Percentage, 2, 0) + String("%");
+  double liquidPercentage1 = Statemachine.GetPercentage(eLiquid1);
+  double liquidPercentage2 = Statemachine.GetPercentage(eLiquid2);
+  double liquidPercentage3 = Statemachine.GetPercentage(eLiquid3);
+
+  String liquidPercentage1_String = FormatValue(liquidPercentage1, 2, 0) + String("%");
+  String liquidPercentage2_String = FormatValue(liquidPercentage2, 2, 0) + String("%");
+  String liquidPercentage3_String = FormatValue(liquidPercentage3, 2, 0) + String("%");
 
   // Set text size
   _tft->setTextSize(1);
@@ -779,20 +736,20 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
   }
 
   x += 40;
-  if (_lastDraw_Liquid1String != liquid1_PercentageString || isfullUpdate)
+  if (_lastDraw_liquidPercentage1_String != liquidPercentage1_String || isfullUpdate)
   {
     // Reset old string on display
     _tft->setTextColor(Config.tftColorBackground);
     _tft->setCursor(x, y);
-    _tft->print(_lastDraw_Liquid1String);
+    _tft->print(_lastDraw_liquidPercentage1_String);
     
     // Draw new string on display
     _tft->setTextColor(Config.tftColorLiquid1);
     _tft->setCursor(x, y);
-    _tft->print(liquid1_PercentageString);
+    _tft->print(liquidPercentage1_String);
     
     // Save last drawn string
-    _lastDraw_Liquid1String = liquid1_PercentageString;
+    _lastDraw_liquidPercentage1_String = liquidPercentage1_String;
   }
 
   x += 40;
@@ -804,20 +761,20 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
   }
 
   x += 10;
-  if (_lastDraw_Liquid2String != liquid2_PercentageString || isfullUpdate)
+  if (_lastDraw_liquidPercentage2_String != liquidPercentage2_String || isfullUpdate)
   {
     // Reset old string on display
     _tft->setTextColor(Config.tftColorBackground);
     _tft->setCursor(x, y);
-    _tft->print(_lastDraw_Liquid2String);
+    _tft->print(_lastDraw_liquidPercentage2_String);
     
     // Draw new string on display
     _tft->setTextColor(Config.tftColorLiquid2);
     _tft->setCursor(x, y);
-    _tft->print(liquid2_PercentageString);
+    _tft->print(liquidPercentage2_String);
 
     // Save last drawn string
-    _lastDraw_Liquid2String = liquid2_PercentageString;
+    _lastDraw_liquidPercentage2_String = liquidPercentage2_String;
   }
   
   x += 40;
@@ -829,20 +786,20 @@ void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
   }
   
   x += 10;
-  if (_lastDraw_Liquid3String != liquid3_PercentageString || isfullUpdate)
+  if (_lastDraw_liquidPercentage3_String != liquidPercentage3_String || isfullUpdate)
   {
     // Reset old string on display
     _tft->setTextColor(Config.tftColorBackground);
     _tft->setCursor(x, y);
-    _tft->print(_lastDraw_Liquid3String);
+    _tft->print(_lastDraw_liquidPercentage3_String);
     
     // Draw new string on display
     _tft->setTextColor(Config.tftColorLiquid3);
     _tft->setCursor(x, y);
-    _tft->print(liquid3_PercentageString);
+    _tft->print(liquidPercentage3_String);
 
     // Save last drawn string
-    _lastDraw_Liquid3String = liquid3_PercentageString;
+    _lastDraw_liquidPercentage3_String = liquidPercentage3_String;
   }
 
   x += 45;
@@ -867,34 +824,39 @@ void DisplayDriver::DrawDoughnutChart3()
 //===============================================================
 void DisplayDriver::DrawDoughnutChart3(bool clockwise, bool isfullUpdate)
 {
+  MixtureLiquid dashboardLiquid = Statemachine.GetDashboardLiquid();
+  int16_t liquidAngle1 = Statemachine.GetAngle(eLiquid1);
+  int16_t liquidAngle2 = Statemachine.GetAngle(eLiquid2);
+  int16_t liquidAngle3 = Statemachine.GetAngle(eLiquid3);
+
   if (isfullUpdate)
   {
     // Calculate count of draw_Angle's to draw
-    int16_t liquid1Distance_Degrees = GetDistanceDegrees(_liquid1Angle_Degrees, _liquid2Angle_Degrees);
-    int16_t liquid2Distance_Degrees = GetDistanceDegrees(_liquid2Angle_Degrees, _liquid3Angle_Degrees);
-    int16_t liquid3Distance_Degrees = GetDistanceDegrees(_liquid3Angle_Degrees, _liquid1Angle_Degrees);
+    int16_t liquid1Distance_Degrees = GetDistanceDegrees(liquidAngle1, liquidAngle2);
+    int16_t liquid2Distance_Degrees = GetDistanceDegrees(liquidAngle2, liquidAngle3);
+    int16_t liquid3Distance_Degrees = GetDistanceDegrees(liquidAngle3, liquidAngle1);
   
     // Draw doughnut chart parts
-    FillArc(_liquid1Angle_Degrees, liquid1Distance_Degrees, Config.tftColorLiquid1);
-    FillArc(_liquid2Angle_Degrees, liquid2Distance_Degrees, Config.tftColorLiquid2);
-    FillArc(_liquid3Angle_Degrees, liquid3Distance_Degrees, Config.tftColorLiquid3);
+    FillArc(liquidAngle1, liquid1Distance_Degrees, Config.tftColorLiquid1);
+    FillArc(liquidAngle2, liquid2Distance_Degrees, Config.tftColorLiquid2);
+    FillArc(liquidAngle3, liquid3Distance_Degrees, Config.tftColorLiquid3);
   }
   else
   {
-    DrawPartial(_liquid1Angle_Degrees, _lastDraw_liquid1Angle_Degrees, Config.tftColorLiquid1, Config.tftColorLiquid3, clockwise);
-    DrawPartial(_liquid2Angle_Degrees, _lastDraw_liquid2Angle_Degrees, Config.tftColorLiquid2, Config.tftColorLiquid1, clockwise);
-    DrawPartial(_liquid3Angle_Degrees, _lastDraw_liquid3Angle_Degrees, Config.tftColorLiquid3, Config.tftColorLiquid2, clockwise);
+    DrawPartial(liquidAngle1, _lastDraw_liquidAngle1, Config.tftColorLiquid1, Config.tftColorLiquid3, clockwise);
+    DrawPartial(liquidAngle2, _lastDraw_liquidAngle2, Config.tftColorLiquid2, Config.tftColorLiquid1, clockwise);
+    DrawPartial(liquidAngle3, _lastDraw_liquidAngle3, Config.tftColorLiquid3, Config.tftColorLiquid2, clockwise);
   }
 
   // Draw black spacer and selected white
-  FillArc(Move360(_liquid1Angle_Degrees, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, _dashboardLiquid == eLiquid1 ? Config.tftColorForeground : Config.tftColorBackground);
-  FillArc(Move360(_liquid2Angle_Degrees, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, _dashboardLiquid == eLiquid2 ? Config.tftColorForeground : Config.tftColorBackground);
-  FillArc(Move360(_liquid3Angle_Degrees, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, _dashboardLiquid == eLiquid3 ? Config.tftColorForeground : Config.tftColorBackground);
+  FillArc(Move360(liquidAngle1, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, dashboardLiquid == eLiquid1 ? Config.tftColorForeground : Config.tftColorBackground);
+  FillArc(Move360(liquidAngle2, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, dashboardLiquid == eLiquid2 ? Config.tftColorForeground : Config.tftColorBackground);
+  FillArc(Move360(liquidAngle3, -SPACERANGLE_DEGREES), 2 * SPACERANGLE_DEGREES, dashboardLiquid == eLiquid3 ? Config.tftColorForeground : Config.tftColorBackground);
   
   // Set last drawn angles
-  _lastDraw_liquid1Angle_Degrees = _liquid1Angle_Degrees;
-  _lastDraw_liquid2Angle_Degrees = _liquid2Angle_Degrees;
-  _lastDraw_liquid3Angle_Degrees = _liquid3Angle_Degrees;
+  _lastDraw_liquidAngle1 = liquidAngle1;
+  _lastDraw_liquidAngle2 = liquidAngle2;
+  _lastDraw_liquidAngle3 = liquidAngle3;
 }
 
 //===============================================================
@@ -962,7 +924,8 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
   int16_t x = 15;
   int16_t y = HEADEROFFSET_Y + 25 + LONGLINEOFFSET - 2;
 
-  if (_lastDraw_currentSetting != _currentSetting || isfullUpdate)
+  MixerSetting currentSetting = Statemachine.GetMixerSetting();
+  if (_lastDraw_currentSetting != currentSetting || isfullUpdate)
   {
     // Clear old value
     _tft->setTextColor(Config.tftColorBackground);
@@ -971,10 +934,10 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
 
     // Set new value
     _tft->setTextColor(Config.tftColorTextHeader);
-    _tft->setCursor(5, y - 2 + (uint16_t)_currentSetting * SHORTLINEOFFSET);
+    _tft->setCursor(5, y - 2 + (uint16_t)currentSetting * SHORTLINEOFFSET);
     _tft->print("|");
 
-    _lastDraw_currentSetting = _currentSetting;
+    _lastDraw_currentSetting = currentSetting;
   }
 
   if (isfullUpdate)
@@ -1083,7 +1046,7 @@ void DisplayDriver::DrawScreenSaver()
   }
 
   // Draw stars
-  for (int index = 0; index < SCREENSAVER_STARCOUNT; index++)
+  for (uint8_t index = 0; index < SCREENSAVER_STARCOUNT; index++)
   {
     // Init new star, if star animation finished
     if (_stars[index].Size >= _stars[index].MaxSize)
@@ -1186,18 +1149,23 @@ void DisplayDriver::DrawStarTail(int16_t x0, int16_t y0, int16_t start, int16_t 
 //===============================================================
 // Draws a part of the bar
 //===============================================================
-void DisplayDriver::DrawBarPart(int16_t x0, int16_t y, MixtureLiquid liquid, BarBottle barBottle, BarBottle lastDraw_barBottle, int16_t liquid_Percentage, int16_t lastDraw_liquid_Percentage, String name, uint16_t color, bool isDashboard, bool isfullUpdate)
+void DisplayDriver::DrawBarPart(int16_t x0, int16_t y, MixtureLiquid liquid, BarBottle barBottle, BarBottle lastDraw_barBottle, int16_t liquidPercentage, int16_t lastDraw_liquidPercentage, String name, uint16_t color, bool isDashboard, bool isfullUpdate)
 {
   int16_t namesOffsetX = 15;
   int16_t namesOffsetY = 175;
+
+  MixtureLiquid dashboardLiquid = Statemachine.GetDashboardLiquid();
+  BarBottle barBottle1 = Statemachine.GetBarBottle(0);
+  BarBottle barBottle2 = Statemachine.GetBarBottle(1);
+  BarBottle barBottle3 = Statemachine.GetBarBottle(2);
   
   bool isEmpty = barBottle == eEmpty;
-  bool selectedChanged = _dashboardLiquid != _lastDraw_SelectedLiquid;
+  bool selectedChanged = dashboardLiquid != _lastDraw_SelectedLiquid;
   bool bottleChanged = barBottle != lastDraw_barBottle;
-  bool sparklingWaterChanged = liquid_Percentage != lastDraw_liquid_Percentage;
-  bool isSelected = _dashboardLiquid == liquid;
+  bool sparklingWaterChanged = liquidPercentage != lastDraw_liquidPercentage;
+  bool isSelected = dashboardLiquid == liquid;
   bool wasSelected = _lastDraw_SelectedLiquid == liquid;
-  bool hasSparklingWater = _barBottle1 == eSparklingWater || _barBottle2 == eSparklingWater || _barBottle3 == eSparklingWater;
+  bool hasSparklingWater = barBottle1 == eSparklingWater || barBottle2 == eSparklingWater || barBottle3 == eSparklingWater;
 
   // Reset old bottle type selection -> only if bottle type changed
   if (bottleChanged)
@@ -1251,13 +1219,13 @@ void DisplayDriver::DrawBarPart(int16_t x0, int16_t y, MixtureLiquid liquid, Bar
     int16_t yTop = y + namesOffsetY - 120;
 
     // Draw bar graph
-    _tft->fillRect(x, yTop, 3, 100 - liquid_Percentage, color);
-    _tft->fillRect(x, yTop + 100 - liquid_Percentage, 3, liquid_Percentage, Config.tftColorForeground);
+    _tft->fillRect(x, yTop, 3, 100 - liquidPercentage, color);
+    _tft->fillRect(x, yTop + 100 - liquidPercentage, 3, liquidPercentage, Config.tftColorForeground);
 
     // Draw percentage
     _tft->fillRect(x - 10, yTop - 15, 27, 20, Config.tftColorBackground);
     _tft->setTextColor(color);
-    DrawCenteredString(String(liquid_Percentage), x + 3, yTop - 5);
+    DrawCenteredString(String(liquidPercentage), x + 3, yTop - 5);
   }
 }
 
@@ -1378,7 +1346,7 @@ void DisplayDriver::DrawCenteredString(const String& text, int16_t x, int16_t y,
 //===============================================================
 // Formats double value
 //===============================================================
-String DisplayDriver::FormatValue(double value, int mainPlaces, int decimalPlaces)
+String DisplayDriver::FormatValue(double value, int16_t mainPlaces, uint16_t decimalPlaces)
 {
   String returnValue = "";
 

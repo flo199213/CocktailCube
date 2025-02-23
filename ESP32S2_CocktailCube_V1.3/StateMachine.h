@@ -40,17 +40,44 @@ class StateMachine
     // Initializes the state machine
     void Begin(uint8_t pinBuzzer);
 
-    // Returns the angle for a given liquid
-    int16_t GetAngle(MixtureLiquid liquid);
+    // Updates cycle timespan value from wifi
+    bool UpdateValuesFromWifi(uint32_t cycletimespan_ms);
+
+    // Updates a liquid values from wifi
+    bool UpdateValuesFromWifi(MixtureLiquid liquid, int16_t increments_Degrees);
 
     // Returns the current mixer state of the state machine
     MixerState IRAM_ATTR GetCurrentState();
+    
+    // Returns the current menu state
+    MixerState GetMenuState();
 
-    // General state machine execution function
-    void Execute(MixerEvent event);
+    // Returns the current dashboard liquid
+    MixtureLiquid GetDashboardLiquid();
+
+    // Returns the current cleaning liquid
+    MixtureLiquid GetCleaningLiquid();
+
+    // Returns current mixer setting
+    MixerSetting GetMixerSetting();
+
+    // Returns the bottle of a given liquid input
+    BarBottle GetBarBottle(uint8_t index);
+
+    // Returns the angle for a given liquid (used for mixer)
+    int16_t GetAngle(MixtureLiquid liquid);
+
+    // Returns the percentage for a given liquid (used for bar)
+    double GetPercentage(MixtureLiquid liquid);
 
     // Returns the current mixture a string
     String GetMixtureString();
+    
+    // Returns need update counter
+    uint16_t GetNeedUpdate();
+
+    // General state machine execution function
+    void Execute(MixerEvent event);
 
   private:
     // Pin definitions
@@ -63,12 +90,12 @@ class StateMachine
 
     // Dashboard mode settings
     MixtureLiquid _dashboardLiquid = eLiquid1;
-    int16_t _liquid1Angle_Degrees = 0;
-    int16_t _liquid2Angle_Degrees = 0;
-    int16_t _liquid3Angle_Degrees = 0;
-    double _liquid1_Percentage = 0;
-    double _liquid2_Percentage = 0;
-    double _liquid3_Percentage = 0;
+    int16_t _liquidAngle1 = 0;      // Setvalue 1 for mixer mode
+    int16_t _liquidAngle2 = 0;      // Setvalue 2 for mixer mode
+    int16_t _liquidAngle3 = 0;      // Setvalue 3 for mixer mode
+    double _liquidPercentage1 = 0;  // Setvalue 1 for bar mode
+    double _liquidPercentage2 = 0;  // Setvalue 2 for bar mode
+    double _liquidPercentage3 = 0;  // Setvalue 3 for bar mode
 
     // Cleaning mode settings
     MixtureLiquid _cleaningLiquid = eLiquidAll;
@@ -84,6 +111,9 @@ class StateMachine
     // Timer variables for reset counter
     uint32_t _resetTimestamp = 0;
     const uint32_t ResetTime_ms = 2000;
+
+    // Need Update for wifi
+    uint16_t _needUpdate = 0;
 
     // Function menu state
     void FctMenu(MixerEvent event);
@@ -109,8 +139,11 @@ class StateMachine
     // Resets the mixture to default recipe
     void SetMixtureDefaults();
 
-    // Updates all values in display, pumps driver and wifi
-    void UpdateValues();
+    // Updates pump driver values
+    void UpdatePumpValues();
+    
+    // Sets the angle to zero if below min angle and adds the value  to the bigger other angle
+    void MuteMinAngle(int16_t* angleToMute, int16_t* otherAngle1, int16_t* otherAngle2);
 };
 
 //===============================================================
