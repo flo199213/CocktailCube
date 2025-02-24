@@ -62,7 +62,19 @@ ___
 
 FAQ:
 
-* Q: First Question?
+* Q: The CocktailCube displays the error message “No PSRAM detected!” when starting.
+
+  A: The Arduino IDE setting 'PSRAM: “Enabled” ' must be set for uploading the firmware. If this is the case and the message still appears, your ESP module has no PSRAM and use may be unstable due to a lack of RAM.
+
+* Q: The CocktailCube displays the error message “Open SPIFFS failed!” when starting.
+
+  A: If this is the first time you are starting the CocktailCube, then this is completely normal. The file system must be initialized the first time it is started and this can take 1-2 boot attempts. If the error message persists, there is something wrong with your SPIFFS file system. A firmware reupload or flash erase could help.
+
+* Q: The CocktailCube displays the error message “Load config failed!” when starting.
+
+  A: This message is displayed if the configuration previously saved during the last use (CocktailCube.json, AperolSpritz.json, HugoSpritz.json,...) can no longer be loaded at startup. This may be the case, for example, if it has been deleted from the SPIFFS file system or contains invalid values. Tip: The CocktailCube File Checker can be used to check whether a configuration is valid.
+
+* Q: Next Question?
 
   A: Answer...
   
