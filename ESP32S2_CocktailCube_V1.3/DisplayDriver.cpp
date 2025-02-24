@@ -589,9 +589,9 @@ void DisplayDriver::DrawBar(bool isDashboard, bool isfullUpdate)
   BarBottle barBottle2 = Statemachine.GetBarBottle(1);
   BarBottle barBottle3 = Statemachine.GetBarBottle(2);
 
-  double liquidPercentage1 = Statemachine.GetPercentage(eLiquid1);
-  double liquidPercentage2 = Statemachine.GetPercentage(eLiquid2);
-  double liquidPercentage3 = Statemachine.GetPercentage(eLiquid3);
+  double liquidPercentage1 = Statemachine.GetBarPercentage(eLiquid1);
+  double liquidPercentage2 = Statemachine.GetBarPercentage(eLiquid2);
+  double liquidPercentage3 = Statemachine.GetBarPercentage(eLiquid3);
 
   // Draw only check boxes if complete bar stock is empty
   if (isDashboard &&
@@ -713,9 +713,9 @@ void DisplayDriver::DrawLegend()
 //===============================================================
 void DisplayDriver::DrawCurrentValues(bool isfullUpdate)
 {
-  double liquidPercentage1 = Statemachine.GetPercentage(eLiquid1);
-  double liquidPercentage2 = Statemachine.GetPercentage(eLiquid2);
-  double liquidPercentage3 = Statemachine.GetPercentage(eLiquid3);
+  double liquidPercentage1 = Statemachine.GetPumpPercentage(eLiquid1);
+  double liquidPercentage2 = Statemachine.GetPumpPercentage(eLiquid2);
+  double liquidPercentage3 = Statemachine.GetPumpPercentage(eLiquid3);
 
   String liquidPercentage1_String = FormatValue(liquidPercentage1, 2, 0) + String("%");
   String liquidPercentage2_String = FormatValue(liquidPercentage2, 2, 0) + String("%");

@@ -105,6 +105,9 @@ bool StateMachine::UpdateValuesFromWifi(MixtureLiquid liquid, int16_t increments
         break;
     }
 
+    // Update pump values
+    UpdatePumpValues();
+
     // Draw new values in dashboard mode
     if (_currentState == eDashboard)
     {
@@ -112,9 +115,6 @@ bool StateMachine::UpdateValuesFromWifi(MixtureLiquid liquid, int16_t increments
       Display.DrawCurrentValues();
       Display.DrawDoughnutChart3(increments_Degrees > 0);
     }
-
-    // Update pump values
-    UpdatePumpValues();
   }
   else
   {
@@ -203,7 +203,7 @@ int16_t StateMachine::GetAngle(MixtureLiquid liquid)
 //===============================================================
 // Returns the percentage for a given liquid (used for bar)
 //===============================================================
-double StateMachine::GetPercentage(MixtureLiquid liquid)
+double StateMachine::GetBarPercentage(MixtureLiquid liquid)
 {
   switch (liquid)
   {
@@ -219,15 +219,54 @@ double StateMachine::GetPercentage(MixtureLiquid liquid)
 }
 
 //===============================================================
+    // Returns the percentage for a given pump
+//===============================================================
+double StateMachine::GetPumpPercentage(MixtureLiquid liquid)
+{
+  switch (liquid)
+  {
+    case eLiquid1:
+      return _pumpPercentage1;
+    case eLiquid2:
+      return _pumpPercentage2;
+    case eLiquid3:
+      return _pumpPercentage3;
+    default:
+      return -1;
+  }
+}
+
+//===============================================================
 // Returns the current mixture a string
 //===============================================================
 String StateMachine::GetMixtureString()
 {
   // Build string output
   String returnString;
-  returnString += String(Config.liquidName1) + ": " + String(_liquidAngle1) + "°, ";
-  returnString += String(Config.liquidName2) + ": " + String(_liquidAngle2) + "°, ";
-  returnString += String(Config.liquidName3) + ": " + String(_liquidAngle3) + "°";
+
+  if (Config.isMixer)
+  {
+    // Calculate sum
+    double sum_Percentage = _pumpPercentage1 + _pumpPercentage2 + _pumpPercentage3;
+    
+    returnString += String(Config.liquidName1) + ": " + String(_pumpPercentage1) + "% (" + String(_liquidAngle1) + "°), ";
+    returnString += String(Config.liquidName2) + ": " + String(_pumpPercentage2) + "% (" + String(_liquidAngle2) + "°), ";
+    returnString += String(Config.liquidName3) + ": " + String(_pumpPercentage3) + "% (" + String(_liquidAngle3) + "°), ";
+    returnString += "Sum: " + String(sum_Percentage) + "%";
+    
+    if ((sum_Percentage - 100.0) > 0.1 || (sum_Percentage - 100.0) < -0.1)
+    {
+      // Percentage error
+      returnString += " Error: Sum of all percentages must be ~100%";
+    }
+  }
+  else
+  {
+    returnString += String(Config.liquidName1) + ": " + String(_pumpPercentage1) + "%, ";
+    returnString += String(Config.liquidName2) + ": " + String(_pumpPercentage2) + "%, ";
+    returnString += String(Config.liquidName3) + ": " + String(_pumpPercentage3) + "%";
+  }
+
   return returnString;
 }
     
@@ -471,6 +510,9 @@ void StateMachine::FctDashboard(MixerEvent event)
             default:
               break;
           }
+
+          // Update pump values
+          UpdatePumpValues();
         }
 
         // Show dashboard page
@@ -1087,17 +1129,22 @@ void StateMachine::FctScreenSaver(MixerEvent event)
 // Resets the mixture to default recipe
 //===============================================================
 void StateMachine::SetMixtureDefaults()
-{ 
-  // Set mixture to default
-  _liquidAngle1 = Config.liquidAngle1;
-  _liquidAngle2 = Config.liquidAngle2;
-  _liquidAngle3 = Config.liquidAngle3;
-  
-  // Reset bar mode percentages
-  _liquidPercentage1 = 0;
-  _liquidPercentage2 = 0;
-  _liquidPercentage3 = 0;
-  
+{
+  if (Config.isMixer)
+  {
+    // Set mixture to default
+    _liquidAngle1 = Config.liquidAngle1;
+    _liquidAngle2 = Config.liquidAngle2;
+    _liquidAngle3 = Config.liquidAngle3;
+  }
+  else
+  {
+    // Reset bar mode percentages
+    _liquidPercentage1 = 0;
+    _liquidPercentage2 = 0;
+    _liquidPercentage3 = 0;
+  }
+
   // Update pump values
   UpdatePumpValues();
 }
@@ -1107,6 +1154,66 @@ void StateMachine::SetMixtureDefaults()
 //===============================================================
 void StateMachine::UpdatePumpValues()
 {
+  // Angles to percentages (mixer mode)
+  if (Config.isMixer)
+  {
+    int16_t liquid1Distance_Degrees = GetDistanceDegrees(_liquidAngle1, _liquidAngle2);
+    int16_t liquid2Distance_Degrees = GetDistanceDegrees(_liquidAngle2, _liquidAngle3);
+    int16_t liquid3Distance_Degrees = GetDistanceDegrees(_liquidAngle3, _liquidAngle1);
+
+    // Mute angle if below min angle
+    MuteMinAngle(&liquid1Distance_Degrees, &liquid2Distance_Degrees, &liquid3Distance_Degrees);
+    MuteMinAngle(&liquid2Distance_Degrees, &liquid1Distance_Degrees, &liquid3Distance_Degrees);
+    MuteMinAngle(&liquid3Distance_Degrees, &liquid1Distance_Degrees, &liquid2Distance_Degrees);
+
+    // Calculate pump percentage values
+    _pumpPercentage1 = (double)liquid1Distance_Degrees * 100.0 / 360.0;
+    _pumpPercentage2 = (double)liquid2Distance_Degrees * 100.0 / 360.0;
+    _pumpPercentage3 = (double)liquid3Distance_Degrees * 100.0 / 360.0;
+  }
+  // Percentages to percentages (bar mode)
+  else
+  {
+    // Check for any sparkling water connected
+    if (_barBottle1 == eSparklingWater ||
+      _barBottle2 == eSparklingWater ||
+      _barBottle3 == eSparklingWater)
+    {
+      switch (_dashboardLiquid)
+      {
+        case eLiquid1:
+          {
+            _pumpPercentage1 = _barBottle1 == eSparklingWater ? 100.0 : 100.0 - _liquidPercentage1;
+            _pumpPercentage2 = _barBottle2 == eSparklingWater ? _liquidPercentage1 : 0.0;
+            _pumpPercentage3 = _barBottle3 == eSparklingWater ? _liquidPercentage1 : 0.0;
+          }
+          break;
+        case eLiquid2:
+          {
+            _pumpPercentage1 = _barBottle1 == eSparklingWater ? _liquidPercentage2 : 0.0;
+            _pumpPercentage2 = _barBottle2 == eSparklingWater ? 100.0 : 100.0 - _liquidPercentage2;
+            _pumpPercentage3 = _barBottle3 == eSparklingWater ? _liquidPercentage2 : 0.0;
+          }
+          break;
+        case eLiquid3:
+          {
+            _pumpPercentage1 = _barBottle1 == eSparklingWater ? _liquidPercentage3 : 0.0;
+            _pumpPercentage2 = _barBottle2 == eSparklingWater ? _liquidPercentage3 : 0.0;
+            _pumpPercentage3 = _barBottle3 == eSparklingWater ? 100.0 : 100.0 - _liquidPercentage3;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    else
+    {
+      _pumpPercentage1 = _dashboardLiquid == eLiquid1 ? 100.0 : 0.0;
+      _pumpPercentage2 = _dashboardLiquid == eLiquid2 ? 100.0 : 0.0;
+      _pumpPercentage3 = _dashboardLiquid == eLiquid3 ? 100.0 : 0.0;
+    }
+  }
+
   // Default is zero
   double pumpPercentage1 = 0.0;
   double pumpPercentage2 = 0.0;
@@ -1116,74 +1223,16 @@ void StateMachine::UpdatePumpValues()
   switch (_currentState)
   {
     case eDashboard:
-      {
-        if (Config.isMixer)
-        {
-          int16_t liquid1Distance_Degrees = GetDistanceDegrees(_liquidAngle1, _liquidAngle2);
-          int16_t liquid2Distance_Degrees = GetDistanceDegrees(_liquidAngle2, _liquidAngle3);
-          int16_t liquid3Distance_Degrees = GetDistanceDegrees(_liquidAngle3, _liquidAngle1);
-
-          // Mute angle if below min angle
-          MuteMinAngle(&liquid1Distance_Degrees, &liquid2Distance_Degrees, &liquid3Distance_Degrees);
-          MuteMinAngle(&liquid2Distance_Degrees, &liquid1Distance_Degrees, &liquid3Distance_Degrees);
-          MuteMinAngle(&liquid3Distance_Degrees, &liquid1Distance_Degrees, &liquid2Distance_Degrees);
-
-          // Calculate pump percentage values
-          pumpPercentage1 = (double)liquid1Distance_Degrees * 100.0 / 360.0;
-          pumpPercentage2 = (double)liquid2Distance_Degrees * 100.0 / 360.0;
-          pumpPercentage3 = (double)liquid3Distance_Degrees * 100.0 / 360.0;
-        }
-        else
-        {
-          // Check for any sparkling water connected
-          if (_barBottle1 == eSparklingWater ||
-            _barBottle2 == eSparklingWater ||
-            _barBottle3 == eSparklingWater)
-          {
-            // Set sparkling water percentage if connected
-            pumpPercentage1 = _barBottle1 == eSparklingWater ? _liquidPercentage1 : 0.0;
-            pumpPercentage2 = _barBottle2 == eSparklingWater ? _liquidPercentage2 : 0.0;
-            pumpPercentage3 = _barBottle3 == eSparklingWater ? _liquidPercentage3 : 0.0;
-
-            switch (_dashboardLiquid)
-            {
-              case eLiquid1:
-                {
-                  // Overwrite percentage 1 with its wine percentage
-                  pumpPercentage1 = 100.0 - _liquidPercentage1;
-                }
-                break;
-              case eLiquid2:
-                {
-                  // Overwrite percentage 2 with its wine percentage
-                  pumpPercentage2 = 100.0 - _liquidPercentage2;
-                }
-                break;
-              case eLiquid3:
-                {
-                  // Overwrite percentage 3 with its wine percentage
-                  pumpPercentage3 = 100.0 - _liquidPercentage3;
-                }
-                break;
-              default:
-                break;
-            }
-          }
-          else
-          {
-            pumpPercentage1 = _dashboardLiquid == eLiquid1 ? 100.0 : 0.0;
-            pumpPercentage2 = _dashboardLiquid == eLiquid2 ? 100.0 : 0.0;
-            pumpPercentage3 = _dashboardLiquid == eLiquid3 ? 100.0 : 0.0;
-          }
-        }
-      }
+      // Set precalculated pump percentage values
+      pumpPercentage1 = _pumpPercentage1;
+      pumpPercentage2 = _pumpPercentage2;
+      pumpPercentage3 = _pumpPercentage3;
       break;
     case eCleaning:
-      {
-        pumpPercentage1 = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid1) ? 100.0 : 0.0;
-        pumpPercentage2 = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid2) ? 100.0 : 0.0;
-        pumpPercentage3 = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid3) ? 100.0 : 0.0;
-      }
+      // Set cleaning pumps to 100%
+      pumpPercentage1 = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid1) ? 100.0 : 0.0;
+      pumpPercentage2 = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid2) ? 100.0 : 0.0;
+      pumpPercentage3 = (_cleaningLiquid == eLiquidAll || _cleaningLiquid == eLiquid3) ? 100.0 : 0.0;
       break;
     default:
     case eMenu:

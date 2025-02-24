@@ -334,11 +334,8 @@ void loop()
     aliveTimestampLoop = millis();
     ESP_LOGI(TAG, "Loop Alive");
     
-    if (Config.isMixer)
-    {
-      // Print mixture information
-      ESP_LOGI(TAG, "%s", Statemachine.GetMixtureString().c_str());
-    }
+    // Print mixture information
+    ESP_LOGI(TAG, "%s", Statemachine.GetMixtureString().c_str());
     
     // Print memory information
     ESP_LOGI(TAG, "%s", Systemhelper.GetMemoryInfoString().c_str());

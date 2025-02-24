@@ -68,7 +68,10 @@ class StateMachine
     int16_t GetAngle(MixtureLiquid liquid);
 
     // Returns the percentage for a given liquid (used for bar)
-    double GetPercentage(MixtureLiquid liquid);
+    double GetBarPercentage(MixtureLiquid liquid);
+    
+    // Returns the percentage for a given pump
+    double GetPumpPercentage(MixtureLiquid liquid);
 
     // Returns the current mixture a string
     String GetMixtureString();
@@ -96,6 +99,11 @@ class StateMachine
     double _liquidPercentage1 = 0;  // Setvalue 1 for bar mode
     double _liquidPercentage2 = 0;  // Setvalue 2 for bar mode
     double _liquidPercentage3 = 0;  // Setvalue 3 for bar mode
+
+    // Precalculated pump values
+    double _pumpPercentage1 = 0;
+    double _pumpPercentage2 = 0;
+    double _pumpPercentage3 = 0;
 
     // Cleaning mode settings
     MixtureLiquid _cleaningLiquid = eLiquidAll;
