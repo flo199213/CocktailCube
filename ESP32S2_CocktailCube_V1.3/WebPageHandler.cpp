@@ -93,9 +93,11 @@ bool WebPageHandler::handle(WebServer &server, HTTPMethod method, const String &
     }
     else if (server.argName(0) == CYCLE_TIMESPAN)
     {
-      if (result = Statemachine.UpdateValuesFromWifi((uint32_t)server.arg(0).toInt()))
+      result = Statemachine.UpdateValuesFromWifi((uint32_t)server.arg(0).toInt());
+
+      // Save cycle timespan value
+      if (result)
       {
-        // Save cycle timespan value
         Pumps.Save();
       }
     }
