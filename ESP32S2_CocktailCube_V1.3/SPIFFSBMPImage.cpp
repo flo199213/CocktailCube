@@ -168,9 +168,25 @@ ImageReturnCode SPIFFSBMPImage::Allocate(String fileName)
   // Calculate pixel data byte size
   size_t pixelDataByteSize = _rowSize * _height;
 
-  // Check for enough heap (RAM) and allocate buffer
-  if (pixelDataByteSize >= ESP.getMaxAllocHeap() ||
-    !(_bufferPixelData = (uint8_t*)malloc(pixelDataByteSize)))
+  // Check for enough PSRAM first and allocate buffer if available
+  if (pixelDataByteSize < ESP.getMaxAllocPsram())
+  {
+    if (!(_bufferPixelData = (uint8_t*)ps_malloc(pixelDataByteSize)))
+    {
+      _file.close();
+      return IMAGE_ERR_MALLOC;
+    }
+  }
+  // Check for enough heap (RAM) second and allocate buffer if available
+  else if (pixelDataByteSize < ESP.getMaxAllocHeap())
+  {
+    if (!(_bufferPixelData = (uint8_t*)malloc(pixelDataByteSize)))
+    {
+      _file.close();
+      return IMAGE_ERR_MALLOC;
+    }
+  }
+  else
   {
     _file.close();
     return IMAGE_ERR_MALLOC;

@@ -93,19 +93,23 @@ String SystemHelper::GetMemoryInfoString(bool all)
 {
   String returnString;
 
-  double spiffsTotal = max(1.0, (double)SPIFFS.totalBytes());
+  double spiffsTotal = (double)SPIFFS.totalBytes();
   double spiffsUsed = (double)SPIFFS.usedBytes();
-  double spiffsUsage = spiffsUsed / spiffsTotal * 100.0;
+  double spiffsUsage = spiffsTotal == 0 ? 0.0 : spiffsUsed / spiffsTotal * 100.0; // Avoid division by 0
 
-  double heapTotal = max(1.0, (double)ESP.getHeapSize());
+  double heapTotal = (double)ESP.getHeapSize();
   double heapUsed = heapTotal - (double)ESP.getFreeHeap();
-  double heapUsage = heapUsed / heapTotal * 100.0;
+  double heapUsage = heapTotal == 0 ? 0.0 : heapUsed / heapTotal * 100.0; // Avoid division by 0
+
+  double psramTotal = (double)ESP.getPsramSize();
+  double psramUsed = psramTotal - (double)ESP.getFreePsram();
+  double psramUsage = psramTotal == 0 ? 0.0 : psramUsed / psramTotal * 100.0; // Avoid division by 0
 
   if (all)
   {
     returnString += "Flash-Size:      " + String((double)ESP.getFlashChipSize() / (1024.0 * 1024.0), 6) + " MB\n";
-    returnString += "SRAM-Size:       " + String((double)ESP.getFreeHeap() / (1024.0 * 1024.0), 6) + " MB\n";
-    returnString += "PRAM-Size:       " + String((double)ESP.getPsramSize() / (1024.0 * 1024.0), 6) + " MB\n";
+    returnString += "SRAM-Size:       " + String(heapTotal / (1024.0 * 1024.0), 6) + " MB\n";
+    returnString += "PSRAM-Size:      " + String(psramTotal / (1024.0 * 1024.0), 6) + " MB\n";
     returnString += "\n";
     returnString += "Sketch-Size:     " + String((double)ESP.getSketchSize() / (1024.0 * 1024.0), 6) + " MB\n";
     returnString += "FreeSketch-Size: " + String((double)ESP.getFreeSketchSpace() / (1024.0 * 1024.0), 6) + " MB\n";
@@ -113,12 +117,17 @@ String SystemHelper::GetMemoryInfoString(bool all)
     returnString += "SPIFFS Ready:    " + String(SPIFFS.begin(false) ? "true\n" : "false\n");
     returnString += "SPIFFS-Total:    " + String(spiffsTotal / (1024.0 * 1024.0), 6) + " MB\n";
     returnString += "SPIFFS-Used:     " + String(spiffsUsed / (1024.0 * 1024.0), 6) + " MB (" + spiffsUsage + "%)\n";
+    returnString += "\n";
     returnString += "Heap-Total:      " + String(heapTotal / (1024.0 * 1024.0), 6) + " MB\n";
     returnString += "Heap-Used:       " + String(heapUsed / (1024.0 * 1024.0), 6) + " MB (" + heapUsage + "%)\n";
+    returnString += "\n";
+    returnString += "PSRAM-Total:     " + String(psramTotal / (1024.0 * 1024.0), 6) + " MB\n";
+    returnString += "PSRAM-Used:      " + String(psramUsed / (1024.0 * 1024.0), 6) + " MB (" + psramUsage + "%)\n";
   }
   else
   {
     returnString += "SPIFFS-Used: " + String(spiffsUsed / (1024.0 * 1024.0), 6) + " MB (" + spiffsUsage + "%), ";
+    returnString += "PSRAM-Used: " + String(psramUsed / (1024.0 * 1024.0), 6) + " MB (" + psramUsage + "%), ";
     returnString += "Heap-Used: " + String(heapUsed / (1024.0 * 1024.0), 6) + " MB (" + heapUsage + "%)\n";
   }
 

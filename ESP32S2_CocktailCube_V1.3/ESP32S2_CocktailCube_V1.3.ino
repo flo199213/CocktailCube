@@ -17,6 +17,7 @@
  * - USB Firmware MSC On Boot: "Disabled"
  * - Flash Size: "4Mb (32Mb)"
  * - Partition Scheme: "No OTA (2MB APP/2MB SPIFFS)"
+ * - PSRAM: "Enabled"  <----------------------- Important! Otherwise you will get memory issues
  * - Upload Speed: "921600"
  * 
  * -> Leave everything else on default!
@@ -195,8 +196,8 @@ void setup(void)
   if (!SPIFFS.begin(true))
   {
     // Debug information on display
-    Display.DrawInfoBox("Error", "Open SPIFFS failed");
-    ESP_LOGE(TAG, "Loading SPIFFS images failed");
+    Display.DrawInfoBox("Error", "Open SPIFFS failed!");
+    ESP_LOGE(TAG, "Error: Open SPIFFS failed");
     delay(3000);
   }
 
@@ -211,13 +212,22 @@ void setup(void)
     Config.ResetConfig();
 
     // Debug information on display
-    Display.DrawInfoBox("Error", "Load config failed");
-    ESP_LOGE(TAG, "Load config failed");
+    Display.DrawInfoBox("Error", "Load config failed!");
+    ESP_LOGE(TAG, "Error: Load config failed");
     delay(3000);
   }
   ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
   ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
-  
+
+  // Check if PSRAM available
+  if (ESP.getPsramSize() == 0)
+  {
+    // Debug information on display
+    Display.DrawInfoBox("Error", "No PSRAM detected!");
+    ESP_LOGE(TAG, "Error: No PSRAM detected");
+    delay(3000);
+  }
+
   // Loading images from SPIFFS
   ESP_LOGI(TAG, "Loading images from SPIFFS");
   Display.LoadImages();
