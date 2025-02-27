@@ -1,5 +1,15 @@
 # Upload builds
 
+<br>
+
+For direct CocktailCube Firmware and SPIFFS upload simply start **"RunUpdate_Firmware_SPIFFS.bat"**. You will be asked for Upload variant and COM Port.
+
+<br>
+
+Otherwise you can upload manually:
+
+---
+
 * Firmware Build
 
 You can use esptool and the following command to upload the firmware builds to your ESP32-S2:
