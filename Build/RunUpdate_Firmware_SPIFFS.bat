@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo CocktailCube Firmware Uploader
-echo You are about to upload the CocktailCube Firmware and the SPIFFS file system image to the ESP32-S2 Mikrocontroller.
+echo You are about to upload the CocktailCube Firmware and the SPIFFS file system image to the ESP32-S2 Microcontroller.
 echo.
 echo What do you want to upload?
 echo 0: Firmware + SPIFFS file system image
