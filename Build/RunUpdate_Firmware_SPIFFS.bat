@@ -62,19 +62,19 @@ rem Firmware + SPIFFS
 if "%selected_upload%"=="0" (
   echo Starting esptool.exe program with COM port %selected_port% and "Firmware + SPIFFS":
   echo.
-  esptool.exe --chip esp32s2 --port "%selected_port%" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x1000 "ESP32S2_CocktailCube_V1.3.ino.bootloader.bin" 0x8000 "ESP32S2_CocktailCube_V1.3.ino.partitions.bin" 0xe000 "boot_app0.bin" 0x10000 "ESP32S2_CocktailCube_V1.3.ino.bin" 0x00210000 "ESP32S2_CocktailCube_V1.3.ino.spiffs.bin"
+  "%~dp0esptool.exe" --chip esp32s2 --port "%selected_port%" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x1000 "%~dp0ESP32S2_CocktailCube_V1.3.ino.bootloader.bin" 0x8000 "%~dp0ESP32S2_CocktailCube_V1.3.ino.partitions.bin" 0xe000 "%~dp0boot_app0.bin" 0x10000 "%~dp0ESP32S2_CocktailCube_V1.3.ino.bin" 0x00210000 "%~dp0ESP32S2_CocktailCube_V1.3.ino.spiffs.bin"
 ) else (
   rem Firmware
   if "%selected_upload%"=="1" (
     echo Starting esptool.exe program with COM port %selected_port% and "Only Firmware":
     echo.
-    esptool.exe --chip esp32s2 --port "%selected_port%" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x1000 "ESP32S2_CocktailCube_V1.3.ino.bootloader.bin" 0x8000 "ESP32S2_CocktailCube_V1.3.ino.partitions.bin" 0xe000 "boot_app0.bin" 0x10000 "ESP32S2_CocktailCube_V1.3.ino.bin"
+    "%~dp0esptool.exe" --chip esp32s2 --port "%selected_port%" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x1000 "%~dp0ESP32S2_CocktailCube_V1.3.ino.bootloader.bin" 0x8000 "%~dp0ESP32S2_CocktailCube_V1.3.ino.partitions.bin" 0xe000 "%~dp0boot_app0.bin" 0x10000 "%~dp0ESP32S2_CocktailCube_V1.3.ino.bin"
   ) else (
     rem SPIFFS
     if "%selected_upload%"=="2" (
       echo Starting esptool.exe program with COM port %selected_port% and "Only SPIFFS":
       echo.
-      esptool.exe --chip esp32s2 --port "%selected_port%" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x00210000 "ESP32S2_CocktailCube_V1.3.ino.spiffs.bin"
+      "%~dp0esptool.exe" --chip esp32s2 --port "%selected_port%" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x00210000 "%~dp0ESP32S2_CocktailCube_V1.3.ino.spiffs.bin"
     ) else (
       echo Unknown selection error..
       echo.
