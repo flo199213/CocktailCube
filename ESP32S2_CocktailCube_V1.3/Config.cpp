@@ -64,6 +64,8 @@ void Configuration::Load()
     String currentConfigFileName = _preferences.getString(KEY_CONFIGFILE, String(DEFAULT_CONFIGFILE));
     ledModeIdle = (LEDMode)_preferences.getUShort(KEY_LEDMODE_IDLE, eOn);
     ledModeDispensing = (LEDMode)_preferences.getUShort(KEY_LEDMODE_DISPENSING, eFadingFast);
+    encoderDirection = _preferences.getChar(KEY_ENCODER, 1);
+    screenSaverMode = _preferences.getUShort(KEY_SCREENSAVER, e30s);
     _preferences.end();
 
     _currentConfigindex = -1;
@@ -94,6 +96,8 @@ void Configuration::Save()
     _preferences.putString(KEY_CONFIGFILE, GetCurrent());
     _preferences.putUShort(KEY_LEDMODE_IDLE, ledModeIdle);
     _preferences.putUShort(KEY_LEDMODE_DISPENSING, ledModeDispensing);
+    _preferences.putChar(KEY_ENCODER, encoderDirection);
+    _preferences.putUShort(KEY_SCREENSAVER, screenSaverMode);
     _preferences.end();
 
     ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
@@ -302,6 +306,29 @@ void Configuration::ResetConfig()
   Config.tftGlassPosY = 0;
   Config.tftBottlePosX = 0;
   Config.tftBottlePosY = 0;
+}
+
+//===============================================================
+// Returns the screen saver timeout in ms
+//===============================================================
+uint32_t Configuration::GetScreenSaverTimeout_ms()
+{
+  switch (Config.screenSaverMode)
+  {
+    case e2s:
+      return 2000;
+    case e15s:
+      return 15000;
+    case e30s:
+      return 30000;
+    case e1min:
+      return 60000;
+    case e5min:
+      return 300000;
+    case eNone:
+      default:
+      return 0xFFFFFFFF;
+  }
 }
 
 //===============================================================

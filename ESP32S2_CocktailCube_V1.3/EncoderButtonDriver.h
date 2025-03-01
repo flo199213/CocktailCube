@@ -59,16 +59,16 @@ class EncoderButtonDriver
     uint8_t _pinEncoderButton;
 
     // Interrupt service routine variables
-    bool _A_set = false;
-    bool _B_set = false;
+    volatile bool _A_set = false;
+    volatile bool _B_set = false;
 
     // Rotary encoder variables
-    int16_t _encoderIncrements = 0;
+    volatile int16_t _encoderIncrements = 0;
 
     // Encoder state variables
-    bool _isButtonPress = false;
-    uint32_t _lastButtonPress_ms = 0;
-    bool _suppressShortButtonPress = false;
+    volatile bool _isButtonPress = false;
+    volatile uint32_t _lastButtonPress_ms = 0;
+    volatile bool _suppressShortButtonPress = false;
 };
 
 //===============================================================

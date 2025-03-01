@@ -397,7 +397,7 @@ void StateMachine::FctMenu(MixerEvent event)
         }
 
         // Check for screen saver timeout
-        if (millis() - Systemhelper.GetLastUserAction() > SCREENSAVER_TIMEOUT_MS)
+        if (millis() - Systemhelper.GetLastUserAction() > Config.GetScreenSaverTimeout_ms())
         {
           // Exit menu mode and enter screen saver mode
           Execute(eExit);
@@ -670,7 +670,7 @@ void StateMachine::FctDashboard(MixerEvent event)
         }
 
         // Check for screen saver timeout
-        if (millis() - Systemhelper.GetLastUserAction() > SCREENSAVER_TIMEOUT_MS)
+        if (millis() - Systemhelper.GetLastUserAction() > Config.GetScreenSaverTimeout_ms())
         {
           // Exit dashboard mode and enter screen saver mode
           Execute(eExit);
@@ -747,7 +747,7 @@ void StateMachine::FctCleaning(MixerEvent event)
         }
         
         // Check for screen saver timeout
-        if (millis() - Systemhelper.GetLastUserAction() > SCREENSAVER_TIMEOUT_MS)
+        if (millis() - Systemhelper.GetLastUserAction() > Config.GetScreenSaverTimeout_ms())
         {
           // Exit cleaning mode and enter screen saver mode
           Execute(eExit);
@@ -927,7 +927,7 @@ void StateMachine::FctBar(MixerEvent event)
         }
 
          // Check for screen saver timeout
-        if (millis() - Systemhelper.GetLastUserAction() > SCREENSAVER_TIMEOUT_MS)
+        if (millis() - Systemhelper.GetLastUserAction() > Config.GetScreenSaverTimeout_ms())
         {
           // Exit bar mode and enter screen saver mode
           Execute(eExit);
@@ -989,13 +989,11 @@ void StateMachine::FctSettings(MixerEvent event)
                 // Update cycle timespan
                 Pumps.SetCycleTimespan(Pumps.GetCycleTimespan() + currentEncoderIncrements * 20);
                 break;
-
               case eWLAN:
                 // Update wifi mode
                 Wifihandler.SetWifiMode(Wifihandler.GetWifiMode() == WIFI_MODE_AP ? WIFI_MODE_NULL : WIFI_MODE_AP);
                 Display.DrawWifiIcons(true);
                 break;
-
               case eConfig:
                 // Update configuration
                 if ((currentEncoderIncrements > 0 && Config.Increment()) ||
@@ -1027,19 +1025,34 @@ void StateMachine::FctSettings(MixerEvent event)
                   Display.ShowSettingsPage();
                 }
                 break;
-
               case eLEDIdle:
               case eLEDDispensing:
-                // Incrementing or decrementing the LED settings value taking into account the overflow
-                LEDMode* ledMode = _currentSetting == eLEDIdle ? &Config.ledModeIdle : &Config.ledModeDispensing;
-                uint16_t ledModeMax = _currentSetting == eLEDIdle ? LEDIdleModeMax : LEDDispensingModeMax;
+                {
+                  // Incrementing or decrementing the LED settings value taking into account the overflow
+                  LEDMode* ledMode = _currentSetting == eLEDIdle ? &Config.ledModeIdle : &Config.ledModeDispensing;
+                  uint16_t ledModeMax = _currentSetting == eLEDIdle ? LEDIdleModeMax : LEDDispensingModeMax;
+                  if (currentEncoderIncrements < 0)
+                  {
+                    *ledMode = *ledMode + 1 >= ledModeMax ? eOff : (LEDMode)(*ledMode + 1);
+                  }
+                  else
+                  {
+                    *ledMode = *ledMode - 1 < eOff ? (LEDMode)(ledModeMax - 1) : (LEDMode)(*ledMode - 1);
+                  }
+                }
+                break;
+              case eEncoder:
+                Config.encoderDirection = Config.encoderDirection == 1 ? -1 : 1;
+                break;
+              case eScreen:
+                // Incrementing or decrementing the screen saver settings value taking into account the overflow
                 if (currentEncoderIncrements < 0)
                 {
-                  *ledMode = *ledMode + 1 >= ledModeMax ? eOff : (LEDMode)(*ledMode + 1);
+                  Config.screenSaverMode = Config.screenSaverMode + 1 >= ScreensaverModeMax ? eNone : (ScreensaverMode)(Config.screenSaverMode + 1);
                 }
                 else
                 {
-                  *ledMode = *ledMode - 1 < eOff ? (LEDMode)(ledModeMax - 1) : (LEDMode)(*ledMode - 1);
+                  Config.screenSaverMode = Config.screenSaverMode - 1 < eNone ? (ScreensaverMode)(ScreensaverModeMax - 1) : (ScreensaverMode)(Config.screenSaverMode - 1);
                 }
                 break;
             }
@@ -1049,7 +1062,7 @@ void StateMachine::FctSettings(MixerEvent event)
           }
           else
           {
-            if (currentEncoderIncrements < 0)
+            if (currentEncoderIncrements > 0)
             {
               // Incrementing the setting value taking into account the overflow
               _currentSetting = _currentSetting + 1 >= MixerSettingMax ? ePWM : (MixerSetting)(_currentSetting + 1);
@@ -1102,7 +1115,7 @@ void StateMachine::FctSettings(MixerEvent event)
         }
 
         // Check for screen saver timeout
-        if (millis() - Systemhelper.GetLastUserAction() > SCREENSAVER_TIMEOUT_MS)
+        if (millis() - Systemhelper.GetLastUserAction() > Config.GetScreenSaverTimeout_ms())
         {
           // Exit settings mode and enter screen saver mode
           Execute(eExit);
@@ -1155,7 +1168,7 @@ void StateMachine::FctScreenSaver(MixerEvent event)
         EncoderButton.IsButtonPress();
         
         // Check for last user interaction
-        if (millis() - Systemhelper.GetLastUserAction() <= SCREENSAVER_TIMEOUT_MS)
+        if (millis() - Systemhelper.GetLastUserAction() <= Config.GetScreenSaverTimeout_ms())
         {
           // Exit screen saver mode and return to last mode
           Execute(eExit);

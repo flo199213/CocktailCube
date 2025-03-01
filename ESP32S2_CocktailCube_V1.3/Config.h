@@ -32,16 +32,15 @@
 // Max config count to load (Increasing this will cost memory!)
 #define MAXCONFIGS                        15
 
-// Set the value to 1 or -1 if your encoder is turning in the wrong direction
-#define ENCODER_DIRECTION                 1
-
 // Preferences key for current config file
 #define KEY_CONFIGFILE                    "ConfigFile"    // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
 #define KEY_LEDMODE_IDLE                  "LEDIdle"       // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
 #define KEY_LEDMODE_DISPENSING            "LEDDispensing" // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
-#define DEFAULT_CONFIGFILE                "CocktailCube.json"
+#define KEY_ENCODER                       "Encoder"       // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+#define KEY_SCREENSAVER                   "ScreenSaver"   // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
 
 // Config makro names used for loading json config files:
+#define DEFAULT_CONFIGFILE                "CocktailCube.json"
 #define IS_MIXER                          "IS_MIXER"
 #define MIXER_NAME                        "MIXER_NAME"
 #define LIQUID_NAME_1                     "LIQUID_NAME_1"
@@ -103,7 +102,7 @@ enum MixerState : uint16_t
   eReset = 3,
   eSettings = 4,
   eScreenSaver = 5,
-  eBar = 6,
+  eBar = 6
 };
 
 enum MixerEvent : uint16_t
@@ -119,7 +118,7 @@ enum BarBottle : uint16_t
   eEmpty = 1,
   eRedWine = 2,
   eWhiteWine = 3,
-  eRoseWine = 4,
+  eRoseWine = 4
 };
 const uint16_t BarBottleMax = 5;
 
@@ -130,8 +129,10 @@ enum MixerSetting : uint16_t
   eConfig = 2,
   eLEDIdle = 3,
   eLEDDispensing = 4,
+  eEncoder = 5,
+  eScreen = 6
 };
-const uint16_t MixerSettingMax = 5;
+const uint16_t MixerSettingMax = 7;
 
 enum LEDMode : uint16_t
 {
@@ -140,10 +141,21 @@ enum LEDMode : uint16_t
   eSlow = 2,
   eFast = 3,
   eFadingSlow = 4,
-  eFadingFast = 5,
+  eFadingFast = 5
 };
 const uint16_t LEDIdleModeMax = 2;
 const uint16_t LEDDispensingModeMax = 6;
+
+enum ScreensaverMode : uint32_t
+{
+  eNone = 0,
+  e2s = 1,
+  e15s = 2,
+  e30s = 3,
+  e1min = 4,
+  e5min = 5
+};
+const uint16_t ScreensaverModeMax = 6;
 
 //===============================================================
 // Configuration class
@@ -200,6 +212,12 @@ class Configuration
     LEDMode ledModeIdle = eOn;
     LEDMode ledModeDispensing = eFadingFast;
 
+    // Encoder setting
+    volatile int8_t encoderDirection = 1;
+
+    // Screen saver setting
+    uint32_t screenSaverMode = e30s;
+
     // Constructor
     Configuration();
 
@@ -229,6 +247,9 @@ class Configuration
     
     // Resets the configuration to defaults
     void ResetConfig();
+
+    // Returns the screen saver timeout in ms
+    uint32_t GetScreenSaverTimeout_ms();
 
   private:
     // Preferences variable

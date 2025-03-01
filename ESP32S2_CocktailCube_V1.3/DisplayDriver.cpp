@@ -1272,6 +1272,10 @@ String DisplayDriver::GetSettingsName(MixerSetting setting)
       return "LED Idle:";
     case eLEDDispensing:
       return "LED Dispense:";
+    case eEncoder:
+      return "Encoder:";
+    case eScreen:
+      return "Screen Saver:";
     default:
       return "Unknown";
   }
@@ -1285,7 +1289,7 @@ String DisplayDriver::GetSettingsValue(MixerSetting setting)
   switch (setting)
   {
     case ePWM:
-      return String(Pumps.GetCycleTimespan()) + " ms";
+      return String(Pumps.GetCycleTimespan()) + "ms";
     case eWLAN:
       return Wifihandler.GetWifiMode() == WIFI_MODE_AP ? "AP" : "OFF";
     case eConfig:
@@ -1306,6 +1310,25 @@ String DisplayDriver::GetSettingsValue(MixerSetting setting)
           return "Fade Slow";
         case eFadingFast:
           return "Fade Fast";
+      }
+      break;
+    case eEncoder:
+      return Config.encoderDirection == 1 ? "Normal" : "Inverted";
+    case eScreen:
+      switch (Config.screenSaverMode)
+      {
+        case eNone:
+          return "Off";
+        case e2s:
+          return "2s";
+        case e15s:
+          return "15s";
+        case e30s:
+          return "30s";
+        case e1min:
+          return "1min";
+        case e5min:
+          return "5min";
       }
       break;
   }
