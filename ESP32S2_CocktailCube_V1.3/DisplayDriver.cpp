@@ -924,97 +924,40 @@ void DisplayDriver::DrawSettings(bool isfullUpdate)
   int16_t x = 15;
   int16_t y = HEADEROFFSET_Y + 25 + LONGLINEOFFSET - 2;
 
+  // Clear settings text
+  DrawSettingsEntry(x, y + 0 * SHORTLINEOFFSET, _lastDraw_previousSettingName, _lastDraw_previousSettingValue, false, true, isfullUpdate);
+  DrawSettingsEntry(x, y + 1 * SHORTLINEOFFSET, _lastDraw_currentSettingName, _lastDraw_currentSettingValue, _lastDraw_settingSelected, true, isfullUpdate);
+  DrawSettingsEntry(x, y + 2 * SHORTLINEOFFSET, _lastDraw_nextSettingName, _lastDraw_nextSettingValue, false, true, isfullUpdate);
+
+  // Get previous, current and next settings
   MixerSetting currentSetting = Statemachine.GetMixerSetting();
-  if (_lastDraw_currentSetting != currentSetting || isfullUpdate)
-  {
-    // Clear old value
-    _tft->setTextColor(Config.tftColorBackground);
-    _tft->setCursor(5, y - 2 + (uint16_t)_lastDraw_currentSetting * SHORTLINEOFFSET);
-    _tft->print("|");
+  MixerSetting previousSetting = (uint16_t)currentSetting - 1 < 0 ? (MixerSetting)(MixerSettingMax - 1) : (MixerSetting)(currentSetting - 1);
+  MixerSetting nextSetting = (uint16_t)currentSetting + 1 >= MixerSettingMax ? ePWM : (MixerSetting)(currentSetting + 1);
 
-    // Set new value
+  // Update names
+  _lastDraw_previousSettingName = GetSettingsName(previousSetting);
+  _lastDraw_currentSettingName = GetSettingsName(currentSetting);
+  _lastDraw_nextSettingName = GetSettingsName(nextSetting);
+
+  // Update values
+  _lastDraw_previousSettingValue = GetSettingsValue(previousSetting);
+  _lastDraw_currentSettingValue = GetSettingsValue(currentSetting);
+  _lastDraw_nextSettingValue = GetSettingsValue(nextSetting);
+
+  // Update selected
+  _lastDraw_settingSelected = Statemachine.GetSettingSelected();
+
+  // Draw new settings text
+  DrawSettingsEntry(x, y + 0 * SHORTLINEOFFSET, _lastDraw_previousSettingName, _lastDraw_previousSettingValue, false, false, isfullUpdate);
+  DrawSettingsEntry(x, y + 1 * SHORTLINEOFFSET, _lastDraw_currentSettingName, _lastDraw_currentSettingValue, _lastDraw_settingSelected, false, isfullUpdate);
+  DrawSettingsEntry(x, y + 2 * SHORTLINEOFFSET, _lastDraw_nextSettingName, _lastDraw_nextSettingValue, false, false, isfullUpdate);
+
+  // Draw Cursor
+  if (isfullUpdate)
+  {
     _tft->setTextColor(Config.tftColorTextHeader);
-    _tft->setCursor(5, y - 2 + (uint16_t)currentSetting * SHORTLINEOFFSET);
-    _tft->print("|");
-
-    _lastDraw_currentSetting = currentSetting;
-  }
-
-  if (isfullUpdate)
-  {
-    _tft->setTextColor(Config.tftColorTextBody);
-    _tft->setCursor(x, y);
-    _tft->print("PWM CycleTime: ");
-  }
-
-  uint32_t cycleTimespan_ms = Pumps.GetCycleTimespan();
-  if (_lastDraw_cycleTimespan_ms != cycleTimespan_ms || isfullUpdate)
-  {
-    // Clear old value
-    _tft->setCursor(x + 145, y);
-    _tft->setTextColor(Config.tftColorBackground);
-    _tft->print(_lastDraw_cycleTimespan_ms);
-    _tft->print(" ms");
-
-    // Set new value
-    _tft->setCursor(x + 145, y);
-    _tft->setTextColor(Config.tftColorTextBody);
-    _tft->print(cycleTimespan_ms);
-    _tft->print(" ms");
-
-    _lastDraw_cycleTimespan_ms = cycleTimespan_ms;
-  }
-
-  // Move to next line
-  y += SHORTLINEOFFSET;
-
-  if (isfullUpdate)
-  {
-    _tft->setTextColor(Config.tftColorTextBody);
-    _tft->setCursor(x, y);
-    _tft->print("WIFI Mode: ");
-  }
-
-  wifi_mode_t wifiMode = Wifihandler.GetWifiMode();
-  if (_lastDraw_wifiMode != wifiMode || isfullUpdate)
-  {
-    // Clear old value
-    _tft->setCursor(x + 98, y);
-    _tft->setTextColor(Config.tftColorBackground);
-    _tft->print(_lastDraw_wifiMode == WIFI_MODE_AP ? "AP" : "OFF");
-
-    // Set new value
-    _tft->setCursor(x + 98, y);
-    _tft->setTextColor(Config.tftColorTextBody);
-    _tft->print(wifiMode == WIFI_MODE_AP ? "AP" : "OFF");
-    
-    _lastDraw_wifiMode = wifiMode;
-  }
-
-  // Move to next line
-  y += SHORTLINEOFFSET;
-
-  if (isfullUpdate)
-  {
-    _tft->setTextColor(Config.tftColorTextBody);
-    _tft->setCursor(x, y);
-    _tft->print("Config: ");
-  }
-
-  String config = Config.GetCurrent();
-  if (_lastDraw_Config != config || isfullUpdate)
-  {
-    // Clear old value
-    _tft->setCursor(x + 63, y);
-    _tft->setTextColor(Config.tftColorBackground);
-    _tft->print(_lastDraw_Config.c_str());
-
-    // Set new value
-    _tft->setCursor(x + 63, y);
-    _tft->setTextColor(Config.tftColorTextBody);
-    _tft->print(config.c_str());
-    
-    _lastDraw_Config = config;
+    _tft->setCursor(0, y - 2 + SHORTLINEOFFSET);
+    _tft->print("->");
   }
 }
 
@@ -1310,6 +1253,88 @@ SPIFFSBMPImage* DisplayDriver::GetBarBottlePointer(BarBottle barBottle)
     default:
       return &_imageBottle1;
   }
+}
+
+//===============================================================
+// Returns the settings name as string
+//===============================================================
+String DisplayDriver::GetSettingsName(MixerSetting setting)
+{
+  switch (setting)
+  {
+    case ePWM:
+      return "PWM Cycle Time:";
+    case eWLAN:
+      return "WIFI Mode:";
+    case eConfig:
+      return "Config:";
+    case eLEDIdle:
+      return "LED Idle:";
+    case eLEDDispensing:
+      return "LED Dispense:";
+    default:
+      return "Unknown";
+  }
+}
+
+//===============================================================
+// Returns the settings value as string
+//===============================================================
+String DisplayDriver::GetSettingsValue(MixerSetting setting)
+{
+  switch (setting)
+  {
+    case ePWM:
+      return String(Pumps.GetCycleTimespan()) + " ms";
+    case eWLAN:
+      return Wifihandler.GetWifiMode() == WIFI_MODE_AP ? "AP" : "OFF";
+    case eConfig:
+      return Config.GetCurrent();
+    case eLEDIdle:
+    case eLEDDispensing:
+      switch (setting == eLEDIdle ? Config.ledModeIdle : Config.ledModeDispensing)
+      {
+        case eOff:
+          return "Off";
+        case eOn:
+          return "On";
+        case eSlow:
+          return "Blink Slow";
+        case eFast:
+          return "Blink Fast";
+        case eFadingSlow:
+          return "Fade Slow";
+        case eFadingFast:
+          return "Fade Fast";
+      }
+      break;
+  }
+
+  return "???";
+}
+
+//===============================================================
+// Draws a single setting
+//===============================================================
+void DisplayDriver::DrawSettingsEntry(int16_t x, int16_t y, const String &name, const String &value, bool selected, bool clear, bool isfullUpdate)
+{
+  if (isfullUpdate)
+  {
+    // Draw settings name
+    _tft->setTextColor(clear ? Config.tftColorBackground : Config.tftColorTextBody);
+    _tft->setCursor(x, y);
+    _tft->print(name);
+  }
+
+  // Get text bounds
+  int16_t x1, y1;
+  uint16_t w, h;
+  _tft->getTextBounds(name, x, y, &x1, &y1, &w, &h);
+
+  // Draw settings value
+  _tft->setCursor(x + w + 5, y);
+  _tft->setTextColor(clear ? Config.tftColorBackground : selected ? Config.tftColorTextHeader : Config.tftColorTextBody);
+  _tft->print(value);
 }
 
 //===============================================================

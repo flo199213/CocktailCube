@@ -275,10 +275,13 @@ class DisplayDriver
     BarBottle _lastDraw_barBottle1 = eEmpty;
     BarBottle _lastDraw_barBottle2 = eEmpty;
     BarBottle _lastDraw_barBottle3 = eEmpty;
-    uint32_t _lastDraw_cycleTimespan_ms = 0;
-    wifi_mode_t _lastDraw_wifiMode = WIFI_MODE_NULL;
-    MixerSetting _lastDraw_currentSetting = ePWM;
-    String _lastDraw_Config = "";
+    bool _lastDraw_settingSelected = false;
+    String _lastDraw_previousSettingName = "";
+    String _lastDraw_currentSettingName = "";
+    String _lastDraw_nextSettingName = "";
+    String _lastDraw_previousSettingValue = "";
+    String _lastDraw_currentSettingValue = "";
+    String _lastDraw_nextSettingValue = "";
     uint16_t _lastDraw_ConnectedClients = 0;
 
     // Screen saver variables
@@ -317,6 +320,15 @@ class DisplayDriver
 
     // Returns a pointer to the requested bar bottle image
     SPIFFSBMPImage* GetBarBottlePointer(BarBottle barBottle);
+
+    // Returns the settings name as string
+    String GetSettingsName(MixerSetting setting);
+
+    // Returns the settings value as string
+    String GetSettingsValue(MixerSetting setting);
+
+    // Draws a single setting
+    void DrawSettingsEntry(int16_t x, int16_t y, const String &name, const String &value, bool selected, bool clear, bool isfullUpdate);
     
     // Draws a string centered
     void DrawCenteredString(const String &text, int16_t x, int16_t y, bool underlined = false, uint16_t lineColor = 0, bool backGround = false, uint16_t backGroundColor = 0);

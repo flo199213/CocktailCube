@@ -62,6 +62,8 @@ void Configuration::Load()
   if (_preferences.begin(SETTINGS_NAME, true))
   {
     String currentConfigFileName = _preferences.getString(KEY_CONFIGFILE, String(DEFAULT_CONFIGFILE));
+    ledModeIdle = (LEDMode)_preferences.getUShort(KEY_LEDMODE_IDLE, eOn);
+    ledModeDispensing = (LEDMode)_preferences.getUShort(KEY_LEDMODE_DISPENSING, eFadingFast);
     _preferences.end();
 
     _currentConfigindex = -1;
@@ -90,6 +92,8 @@ void Configuration::Save()
   if (_preferences.begin(SETTINGS_NAME, false))
   {
     _preferences.putString(KEY_CONFIGFILE, GetCurrent());
+    _preferences.putUShort(KEY_LEDMODE_IDLE, ledModeIdle);
+    _preferences.putUShort(KEY_LEDMODE_DISPENSING, ledModeDispensing);
     _preferences.end();
 
     ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
@@ -275,12 +279,12 @@ void Configuration::ResetConfig()
   Config.tftColorStartPage = 0xFC00;
   Config.tftColorStartPageForeground = 0xDF9E;
   Config.tftColorStartPageBackground = 0xA6DC;
-  Config.tftColorTextHeader = ST77XX_WHITE;
+  Config.tftColorTextHeader = ST77XX_RED;
   Config.tftColorTextBody = ST77XX_WHITE;
   Config.tftColorInfoBoxBorder = ST77XX_BLACK;
   Config.tftColorInfoBoxForeground = ST77XX_BLACK;
   Config.tftColorInfoBoxBackground = ST77XX_WHITE;
-  Config.tftColorMenuSelector = ST77XX_WHITE;
+  Config.tftColorMenuSelector = ST77XX_RED;
   Config.tftColorLiquid1 = ST77XX_RED;
   Config.tftColorLiquid2 = ST77XX_GREEN;
   Config.tftColorLiquid3 = ST77XX_BLUE;

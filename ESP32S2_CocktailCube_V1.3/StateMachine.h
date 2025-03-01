@@ -61,6 +61,9 @@ class StateMachine
     // Returns current mixer setting
     MixerSetting GetMixerSetting();
 
+    // Returns true, if the setting is selected
+    bool GetSettingSelected();
+
     // Returns the bottle of a given liquid input
     BarBottle GetBarBottle(uint8_t index);
 
@@ -115,6 +118,7 @@ class StateMachine
 
     // Setting mode settings
     MixerSetting _currentSetting = ePWM;
+    bool _settingSelected = false;
 
     // Timer variables for reset counter
     uint32_t _resetTimestamp = 0;

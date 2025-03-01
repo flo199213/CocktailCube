@@ -36,7 +36,9 @@
 #define ENCODER_DIRECTION                 1
 
 // Preferences key for current config file
-#define KEY_CONFIGFILE                    "ConfigFile"   // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+#define KEY_CONFIGFILE                    "ConfigFile"    // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+#define KEY_LEDMODE_IDLE                  "LEDIdle"       // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+#define KEY_LEDMODE_DISPENSING            "LEDDispensing" // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
 #define DEFAULT_CONFIGFILE                "CocktailCube.json"
 
 // Config makro names used for loading json config files:
@@ -126,8 +128,22 @@ enum MixerSetting : uint16_t
   ePWM = 0,
   eWLAN = 1,
   eConfig = 2,
+  eLEDIdle = 3,
+  eLEDDispensing = 4,
 };
-const uint16_t MixerSettingMax = 3;
+const uint16_t MixerSettingMax = 5;
+
+enum LEDMode : uint16_t
+{
+  eOff = 0,
+  eOn = 1,
+  eSlow = 2,
+  eFast = 3,
+  eFadingSlow = 4,
+  eFadingFast = 5,
+};
+const uint16_t LEDIdleModeMax = 2;
+const uint16_t LEDDispensingModeMax = 6;
 
 //===============================================================
 // Configuration class
@@ -179,6 +195,10 @@ class Configuration
     int16_t tftGlassPosY;
     int16_t tftBottlePosX;
     int16_t tftBottlePosY;
+
+    // LED settings
+    LEDMode ledModeIdle = eOn;
+    LEDMode ledModeDispensing = eFadingFast;
 
     // Constructor
     Configuration();

@@ -165,6 +165,14 @@ MixerSetting StateMachine::GetMixerSetting()
 }
 
 //===============================================================
+// Returns true, if the setting is selected
+//===============================================================
+bool StateMachine::GetSettingSelected()
+{
+  return _settingSelected;
+}
+
+//===============================================================
 // Returns the bottle of a given liquid input
 //===============================================================
 BarBottle StateMachine::GetBarBottle(uint8_t index)
@@ -945,6 +953,9 @@ void StateMachine::FctSettings(MixerEvent event)
   {
     case eEntry:
       {
+        // Reset selected state
+        _settingSelected = false;
+
         // Update configurations
         Config.EnumerateConfigs();
 
@@ -969,54 +980,89 @@ void StateMachine::FctSettings(MixerEvent event)
         // Will be true, if new encoder position is available
         if (currentEncoderIncrements != 0)
         {
-          switch (_currentSetting)
+          // Check if menu selected a setting
+          if (_settingSelected)
           {
-            case ePWM:
-              // Update cycle timespan
-              Pumps.SetCycleTimespan(Pumps.GetCycleTimespan() + currentEncoderIncrements * 20);
-              break;
+            switch (_currentSetting)
+            {
+              case ePWM:
+                // Update cycle timespan
+                Pumps.SetCycleTimespan(Pumps.GetCycleTimespan() + currentEncoderIncrements * 20);
+                break;
 
-            case eWLAN:
-              // Update wifi mode
-              Wifihandler.SetWifiMode(Wifihandler.GetWifiMode() == WIFI_MODE_AP ? WIFI_MODE_NULL : WIFI_MODE_AP);
-              Display.DrawWifiIcons(true);
-              break;
+              case eWLAN:
+                // Update wifi mode
+                Wifihandler.SetWifiMode(Wifihandler.GetWifiMode() == WIFI_MODE_AP ? WIFI_MODE_NULL : WIFI_MODE_AP);
+                Display.DrawWifiIcons(true);
+                break;
 
-            case eConfig:
-              // Update configuration
-              if ((currentEncoderIncrements > 0 && Config.Increment()) ||
-                (currentEncoderIncrements < 0 && Config.Decrement()))
-              {
-                // Load new configuration
-                if (Config.LoadConfig(Config.GetCurrent()))
+              case eConfig:
+                // Update configuration
+                if ((currentEncoderIncrements > 0 && Config.Increment()) ||
+                  (currentEncoderIncrements < 0 && Config.Decrement()))
                 {
-                  // Load new images
-                  Display.LoadImages();
+                  // Load new configuration
+                  if (Config.LoadConfig(Config.GetCurrent()))
+                  {
+                    // Load new images
+                    Display.LoadImages();
 
-                  // Show intro page for a few milliseconds
-                  Display.ShowIntroPage();
-                  delay(800);
+                    // Show intro page for a few milliseconds
+                    Display.ShowIntroPage();
+                    delay(800);
+                  }
+                  else
+                  {
+                    // Reset config if loading failed
+                    Config.ResetConfig();
+                  }
+                  
+                  // Increment need update counter fpr wifi clients
+                  _needUpdate++;
+
+                  // Reset mixture
+                  SetMixtureDefaults();
+                    
+                  // Reset to settings page
+                  Display.ShowSettingsPage();
+                }
+                break;
+
+              case eLEDIdle:
+              case eLEDDispensing:
+                // Incrementing or decrementing the LED settings value taking into account the overflow
+                LEDMode* ledMode = _currentSetting == eLEDIdle ? &Config.ledModeIdle : &Config.ledModeDispensing;
+                uint16_t ledModeMax = _currentSetting == eLEDIdle ? LEDIdleModeMax : LEDDispensingModeMax;
+                if (currentEncoderIncrements < 0)
+                {
+                  *ledMode = *ledMode + 1 >= ledModeMax ? eOff : (LEDMode)(*ledMode + 1);
                 }
                 else
                 {
-                  // Reset config if loading failed
-                  Config.ResetConfig();
+                  *ledMode = *ledMode - 1 < eOff ? (LEDMode)(ledModeMax - 1) : (LEDMode)(*ledMode - 1);
                 }
-                
-                // Increment need update counter fpr wifi clients
-                _needUpdate++;
+                break;
+            }
 
-                // Reset mixture
-                SetMixtureDefaults();
-                  
-                // Reset to settings page
-                Display.ShowSettingsPage();
-              }
-              break;
+            // Draw settings in partial update mode
+            Display.DrawSettings();
           }
-
-          // Draw settings in partial update mode
-          Display.DrawSettings();
+          else
+          {
+            if (currentEncoderIncrements < 0)
+            {
+              // Incrementing the setting value taking into account the overflow
+              _currentSetting = _currentSetting + 1 >= MixerSettingMax ? ePWM : (MixerSetting)(_currentSetting + 1);
+            }
+            else
+            {
+              // Decrementing the setting value taking into account the overflow
+              _currentSetting = _currentSetting - 1 < ePWM ? (MixerSetting)(MixerSettingMax - 1) : (MixerSetting)(_currentSetting - 1);
+            }
+            
+            // Draw settings
+            Display.DrawSettings(true);
+          }
           
           // Discard encoder increments
           EncoderButton.GetEncoderIncrements();
@@ -1028,9 +1074,9 @@ void StateMachine::FctSettings(MixerEvent event)
           // Short beep sound
           tone(_pinBuzzer, 500, 40);
 
-          // Incrementing the setting value taking into account the overflow
-          _currentSetting = (uint16_t)_currentSetting + 1 >= MixerSettingMax ? ePWM : (MixerSetting)(_currentSetting + 1);
-          
+          // Toggle selected state
+          _settingSelected = !_settingSelected;
+   
           // Draw settings
           Display.DrawSettings();
           

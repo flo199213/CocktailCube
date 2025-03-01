@@ -109,7 +109,18 @@ const uint32_t AliveTime_ms = 2000;
 
 // Timer variables for blink counter
 uint32_t blinkTimestamp = 0;
-const uint32_t BlinkTime_ms = 100;
+const uint32_t BlinkTimeSlow_ms = 500;
+const uint32_t BlinkTimeFast_ms = 100;
+
+// Timer variables for fading counter
+uint32_t fadingTimestamp = 0;
+int16_t fadingDirection = 1;
+const uint32_t FadingTimeSlow_ms = 5;
+const uint32_t FadingTimeFast_ms = 1;
+
+// LED variables
+int16_t ledValue = 0;
+LEDMode lastLEDMode = eOff;
 
 //===============================================================
 // Interrupt on pumps enable changing state
@@ -354,21 +365,8 @@ void loop()
     digitalWrite(PIN_LEDSTATUS, !digitalRead(PIN_LEDSTATUS));
   }
 
-  // Flash LED light if dispensing is in progress
-  if (Pumps.IsEnabled())
-  {
-    // Set LED to blink
-    if ((millis() - blinkTimestamp) > BlinkTime_ms)
-    {
-      blinkTimestamp = millis();
-      digitalWrite(PIN_LEDLIGHT, !digitalRead(PIN_LEDLIGHT));
-    }
-  }
-  else
-  {
-    // Set LED to on
-    digitalWrite(PIN_LEDLIGHT, HIGH);
-  }
+  // Set LED light
+  RunLED(Pumps.IsEnabled() ? Config.ledModeDispensing : Config.ledModeIdle);
 
   // Update pump outputs
   Pumps.Update();
@@ -381,4 +379,51 @@ void loop()
 
   // Update wifi, webserver and clients
   Wifihandler.Update();
+}
+
+//===============================================================
+// Runs the LED animation
+//===============================================================
+void RunLED(LEDMode ledMode)
+{
+  bool updateLED = false;
+
+  switch (ledMode)
+  {
+    case eOff:
+    case eOn:
+      // Set LED to on or off
+      updateLED = ledMode != lastLEDMode;
+      ledValue = ledMode == eOff ? 0 : 255;
+      break;
+    case eSlow:
+    case eFast:
+      // Set LED to blink
+      if ((millis() - blinkTimestamp) > (ledMode == eSlow ? BlinkTimeSlow_ms : BlinkTimeFast_ms))
+      {
+        blinkTimestamp = millis();
+        updateLED = true;
+        ledValue = ledValue != 0 ? 0 : 255;
+      }
+      break;
+    case eFadingSlow:
+    case eFadingFast:
+      // Set LED to fading
+      if ((millis() - fadingTimestamp) > (ledMode == eFadingSlow ? FadingTimeSlow_ms : FadingTimeFast_ms))
+      {
+        fadingTimestamp = millis();
+        updateLED = true;
+        fadingDirection = ledValue >= 255 ? -1 : ledValue <= 0 ? 1 : fadingDirection;
+        ledValue += fadingDirection;
+      }
+      break;
+  }
+
+  // Update LED if necessary
+  if (updateLED)
+  {
+    analogWrite(PIN_LEDLIGHT, ledValue);
+  }
+
+  lastLEDMode = ledMode;
 }
