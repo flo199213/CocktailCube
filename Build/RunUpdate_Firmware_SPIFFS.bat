@@ -2,7 +2,12 @@
 setlocal enabledelayedexpansion
 
 echo CocktailCube Firmware Uploader
-echo You are about to upload the CocktailCube Firmware and the SPIFFS file system image to the ESP32-S2 Microcontroller.
+echo You are about to upload the CocktailCube Firmware and the SPIFFS file system image to the ESP32-S2 microcontroller.
+echo.
+echo If this is your first time ever uploading firmware to your CocktailCube, you must set the ESP32-S2 microcontroller into bootloader mode first (Hold IO0 button while short pressing RST/reset button).
+echo.
+echo This is also the case if you don't see any COM Port while the CocktailCube PCB is connected.
+echo.
 echo.
 echo What do you want to upload?
 echo 0: Firmware + SPIFFS file system image
@@ -81,5 +86,25 @@ if "%selected_upload%"=="0" (
     )
   )
 )
+
+echo.
+echo.
+
+if %ERRORLEVEL% NEQ 0 (
+  echo ---
+  echo If you have one of the following errors this might help you:
+  echo PermissionError: Is there any Arduino IDE open or does another program have currently access to the COM port?
+  echo OSError: There may have been an error when automatically starting the ESP bootloader. Simply try again
+  echo ---
+)
+
+if %ERRORLEVEL% EQU 0 (
+  echo ---
+  echo CocktailCube successfully flashed. Have fun!
+  echo ---
+)
+
+echo.
+echo.
 
 pause
