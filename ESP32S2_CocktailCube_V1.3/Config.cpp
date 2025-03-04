@@ -36,6 +36,9 @@ bool Configuration::Begin()
   // Log startup info
   ESP_LOGI(TAG, "Begin initializing configuration");
 
+  // Check if preferences (nvs) is initialized
+  InitPreferences();
+
   // Reset configuration
   ResetConfig();
 
@@ -55,18 +58,37 @@ bool Configuration::Begin()
 }
 
 //===============================================================
+// Initializes the preferences in case of first startup ever
+//===============================================================
+void Configuration::InitPreferences()
+{
+  // Open without check
+  _preferences.begin(SETTINGS_NAME, READONLY_MODE);
+
+  // Check if preferences (nvs) is initialized
+  if (!_preferences.isKey(KEY_PREFERENCES_INITIALIZED))
+  {
+    ESP_LOGI(TAG, "First startup after flashing firmware detected. Set NVS initialized");
+
+    _preferences.end();
+    _preferences.begin(SETTINGS_NAME, READWRITE_MODE);
+    _preferences.putBool(KEY_PREFERENCES_INITIALIZED, true);
+  }
+  _preferences.end();
+}
+
+//===============================================================
 // Load values from flash
 //===============================================================
 void Configuration::Load()
 {
-  if (_preferences.begin(SETTINGS_NAME, true))
+  if (_preferences.begin(SETTINGS_NAME, READONLY_MODE))
   {
     String currentConfigFileName = _preferences.getString(KEY_CONFIGFILE, String(DEFAULT_CONFIGFILE));
     ledModeIdle = (LEDMode)_preferences.getUShort(KEY_LEDMODE_IDLE, eOn);
     ledModeDispensing = (LEDMode)_preferences.getUShort(KEY_LEDMODE_DISPENSING, eFadingFast);
     encoderDirection = _preferences.getChar(KEY_ENCODER, 1);
     screenSaverMode = _preferences.getUShort(KEY_SCREENSAVER, e30s);
-    _preferences.end();
 
     _currentConfigindex = -1;
     for (uint8_t index = 0; index < _fileCount; index++)
@@ -84,6 +106,8 @@ void Configuration::Load()
   {
     ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
   }
+  
+  _preferences.end();
 }
 
 //===============================================================
@@ -91,14 +115,13 @@ void Configuration::Load()
 //===============================================================
 void Configuration::Save()
 {
-  if (_preferences.begin(SETTINGS_NAME, false))
+  if (_preferences.begin(SETTINGS_NAME, READWRITE_MODE))
   {
     _preferences.putString(KEY_CONFIGFILE, GetCurrent());
     _preferences.putUShort(KEY_LEDMODE_IDLE, ledModeIdle);
     _preferences.putUShort(KEY_LEDMODE_DISPENSING, ledModeDispensing);
     _preferences.putChar(KEY_ENCODER, encoderDirection);
     _preferences.putUShort(KEY_SCREENSAVER, screenSaverMode);
-    _preferences.end();
 
     ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
   }
@@ -106,6 +129,8 @@ void Configuration::Save()
   {
     ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
   }
+  
+  _preferences.end();
 }
 
 //===============================================================

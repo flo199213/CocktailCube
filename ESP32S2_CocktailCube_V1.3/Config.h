@@ -24,7 +24,6 @@
 //===============================================================
 #define APP_VERSION                       "V1.3"
 #define APP_COPYRIGHT                     "2025"
-#define SETTINGS_NAME                     "Settings"
 
 #define WIFI_SSID                         "CockailCube" // Should not exceed 15 characters and be a single word -> will be the dns name in lower case and without white spaces for example "http://cocktailcube.local/"
 #define WIFI_PASSWORD                     "mixer1234"   // Should not exceed 15 characters
@@ -32,7 +31,13 @@
 // Max config count to load (Increasing this will cost memory!)
 #define MAXCONFIGS                        15
 
-// Preferences key for current config file
+// Defines for preferences handling
+#define READONLY_MODE                     true
+#define READWRITE_MODE                    false
+#define SETTINGS_NAME                     "Settings"
+#define KEY_PREFERENCES_INITIALIZED       "NvsInit"       // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+
+// Preferences keys for current config settings
 #define KEY_CONFIGFILE                    "ConfigFile"    // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
 #define KEY_LEDMODE_IDLE                  "LEDIdle"       // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
 #define KEY_LEDMODE_DISPENSING            "LEDDispensing" // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
@@ -261,6 +266,9 @@ class Configuration
     
     // Current config index
     int16_t _currentConfigindex = -1;
+
+    // Initializes the preferences in case of first startup ever
+    void InitPreferences();
 
     // Checks, if a file is an valid config file
     bool CheckValid(JsonDocument doc);

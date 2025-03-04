@@ -1087,6 +1087,14 @@ void StateMachine::FctSettings(MixerEvent event)
           // Short beep sound
           tone(_pinBuzzer, 500, 40);
 
+          // Check if save values is needed (selected -> not selected)
+          if (_settingSelected)
+          {
+            Pumps.Save();
+            Wifihandler.Save();
+            Config.Save();
+          }
+
           // Toggle selected state
           _settingSelected = !_settingSelected;
    

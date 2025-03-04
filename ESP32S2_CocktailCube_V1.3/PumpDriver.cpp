@@ -59,11 +59,9 @@ void PumpDriver::Begin(uint8_t pinPump1, uint8_t pinPump2, uint8_t pinPump3, dou
 //===============================================================
 void PumpDriver::Load()
 {
-  if (_preferences.begin(SETTINGS_NAME, true))
+  if (_preferences.begin(SETTINGS_NAME, READONLY_MODE))
   {
-    _preferences.begin(SETTINGS_NAME, false);
     _cycleTimespan_ms = _preferences.getLong(KEY_CYCLETIMESPAN_MS, DEFAULT_CYCLE_TIMESPAN_MS);
-    _preferences.end();
 
     ESP_LOGI(TAG, "Preferences successfully loaded from '%s'", SETTINGS_NAME);
   }
@@ -71,6 +69,8 @@ void PumpDriver::Load()
   {
     ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
   }
+
+  _preferences.end();
 }
 
 //===============================================================
@@ -78,11 +78,9 @@ void PumpDriver::Load()
 //===============================================================
 void PumpDriver::Save()
 {
-  if (_preferences.begin(SETTINGS_NAME, false))
+  if (_preferences.begin(SETTINGS_NAME, READWRITE_MODE))
   {
-    _preferences.begin(SETTINGS_NAME, false);
     _preferences.putLong(KEY_CYCLETIMESPAN_MS, _cycleTimespan_ms);
-    _preferences.end();
 
     ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
   }
@@ -90,6 +88,8 @@ void PumpDriver::Save()
   {
     ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
   }
+
+  _preferences.end();
 }
 
 //===============================================================

@@ -48,19 +48,20 @@ void FlowMeterDriver::Begin()
 //===============================================================
 void FlowMeterDriver::Load()
 {
-  if (_preferences.begin(SETTINGS_NAME, true))
+  if (_preferences.begin(SETTINGS_NAME, READONLY_MODE))
   {
     _valueLiquid1_L = _preferences.getDouble(KEY_FLOW_LIQUID1, 0.0);
     _valueLiquid2_L = _preferences.getDouble(KEY_FLOW_LIQUID2, 0.0);
     _valueLiquid3_L = _preferences.getDouble(KEY_FLOW_LIQUID3, 0.0);
-    _preferences.end();
-    
+  
     ESP_LOGI(TAG, "Preferences successfully loaded from '%s'", SETTINGS_NAME);
   }
   else
   {
     ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
   }
+
+  _preferences.end();
 }
 
 //===============================================================
@@ -68,19 +69,20 @@ void FlowMeterDriver::Load()
 //===============================================================
 void FlowMeterDriver::Save()
 {
-  if (_preferences.begin(SETTINGS_NAME, false))
+  if (_preferences.begin(SETTINGS_NAME, READWRITE_MODE))
   {
     _preferences.putDouble(KEY_FLOW_LIQUID1, _valueLiquid1_L);
     _preferences.putDouble(KEY_FLOW_LIQUID2, _valueLiquid2_L);
     _preferences.putDouble(KEY_FLOW_LIQUID3, _valueLiquid3_L); 
-    _preferences.end();
-
+    
     ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
   }
   else
   {
     ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
   }
+
+  _preferences.end();
 }
 
 //===============================================================

@@ -51,10 +51,9 @@ void WifiHandler::Begin()
 //===============================================================
 void WifiHandler::Load()
 {
-  if (_preferences.begin(SETTINGS_NAME, true))
+  if (_preferences.begin(SETTINGS_NAME, READONLY_MODE))
   {
     _initWifiMode = _preferences.getBool(KEY_WIFIMODE, true) ? WIFI_MODE_AP : WIFI_MODE_NULL;
-    _preferences.end();
 
     ESP_LOGI(TAG, "Preferences successfully loaded from '%s'", SETTINGS_NAME);
   }
@@ -62,6 +61,8 @@ void WifiHandler::Load()
   {
     ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
   }
+
+  _preferences.end();
 }
 
 //===============================================================
@@ -69,10 +70,9 @@ void WifiHandler::Load()
 //===============================================================
 void WifiHandler::Save()
 {
-  if (_preferences.begin(SETTINGS_NAME, false))
+  if (_preferences.begin(SETTINGS_NAME, READWRITE_MODE))
   {
     _preferences.putBool(KEY_WIFIMODE, _wifiMode == WIFI_AP);
-    _preferences.end();
 
     ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
   }
@@ -80,6 +80,8 @@ void WifiHandler::Save()
   {
     ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
   }
+
+  _preferences.end();
 }
 
 //===============================================================
