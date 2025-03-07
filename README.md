@@ -5,9 +5,13 @@ Sourcecode for CocktailCube Devices powered by ESP32-S2 custom board (PCB)
 
 You can download the 3D print files required for the assembly from cults. When you buy a kit or PCB from Aliexpress, the 3D print files are included!
 
+___
+
 Page | Link
 -------- | --------
 Cults: | <a href="https://cults3d.com/:XXXXXXXX">https://cults3d.com/:XXXXXXXX</a>
+
+___
 
 **You can buy the CocktailCube PCB or the full cocktailcube from AliExpress: [Buy Here](https://s.click.aliexpress.com/e/_oBPfSOm)**
 
