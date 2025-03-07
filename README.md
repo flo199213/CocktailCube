@@ -9,12 +9,13 @@ Page | Link
 -------- | --------
 Cults: | <a href="https://cults3d.com/:XXXXXXXX">https://cults3d.com/:XXXXXXXX</a>
 
-You can buy the CocktailCube PCB from AliExpress
+You can buy the CocktailCube from AliExpress: https://s.click.aliexpress.com/e/_oBPfSOm
 
-<a href="PCB + Kit >https://s.click.aliexpress.com/e/_ExG1k5q</a>
-
-
-
+Page | Option
+-------- | --------
+PCB: | 1
+PCB + Hardware: | 2
+PCB + Hardware + Printparts: | 3
 
 
 <img src="Images/WINEBar.jpg" width="400">
