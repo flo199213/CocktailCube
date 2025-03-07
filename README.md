@@ -11,15 +11,11 @@ Cults: | <a href="https://cults3d.com/:XXXXXXXX">https://cults3d.com/:XXXXXXXX</
 
 You can buy the CocktailCube PCB from AliExpress
 
-<img src="Images/PCB.png" width="300">
+<a href="PCB + Kit >https://s.click.aliexpress.com/e/_ExG1k5q</a>
 
-Version | Link
--------- | --------
-Only PCB: | <a href="https://aliexpress.com/pcb">https://aliexpress.com/pcb</a> 
-PCB + Kit: | <a href="https://aliexpress.com/pcb+kit">https://aliexpress.com/pcb+kit</a>
-PCB + Kit + Printed Parts: | <a href="https://aliexpress.com/pcb+kit+printedparts">https://aliexpress.com/pcb+kit+printedparts</a>
 
-Images:
+
+
 
 <img src="Images/WINEBar.jpg" width="400">
 
