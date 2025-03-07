@@ -13,13 +13,11 @@ You can buy the CocktailCube PCB or the full cocktailcube from AliExpress
 
 https://s.click.aliexpress.com/e/_oBPfSOm
 
-<img src="Images/PCB.png" width="300">
-
-Page | Option |
--------- | -------- | -----------
-PCB: | 1 | <img src="Images/option1.jpg" width="300">****
-PCB + Hardware: | 2 | <img src="Images/option2.jpg" width="300">****
-PCB + Hardware + Printparts: | 3 | <img src="Images/option3.jpg" width="300">****
+| Page                          | Option | Image                                    |
+|-------------------------------|--------|------------------------------------------|
+| PCB                           | 1      | ![](Images/option1.jpg)                  |
+| PCB + Hardware                | 2      | ![](Images/option2.jpg)                  |
+| PCB + Hardware + Printparts   | 3      | ![](Images/option3.jpg)                  |
 
 
 Images:
