@@ -15,10 +15,9 @@ https://s.click.aliexpress.com/e/_oBPfSOm
 
 | Page                          | Option | Image                                    |
 |-------------------------------|--------|------------------------------------------|
-| PCB                           | 1      | ![](Images/option1.jpg)                  |
-| PCB + Hardware                | 2      | ![](Images/option2.jpg)                  |
-| PCB + Hardware + Printparts   | 3      | ![](Images/option3.jpg)                  |
-
+| PCB                           | 1      | <img src="Images/option1.jpg" width="300"> |
+| PCB + Hardware                | 2      | <img src="Images/option2.jpg" width="300"> |
+| PCB + Hardware + Printparts   | 3      | <img src="Images/option3.jpg" width="300"> |
 
 Images:
 
