@@ -85,10 +85,10 @@ void Configuration::Load()
   if (_preferences.begin(SETTINGS_NAME, READONLY_MODE))
   {
     String currentConfigFileName = _preferences.getString(KEY_CONFIGFILE, String(DEFAULT_CONFIGFILE));
-    ledModeIdle = (LEDMode)_preferences.getUShort(KEY_LEDMODE_IDLE, eOn);
-    ledModeDispensing = (LEDMode)_preferences.getUShort(KEY_LEDMODE_DISPENSING, eFadingFast);
+    ledModeIdle = (LEDMode)_preferences.getChar(KEY_LEDMODE_IDLE, eOn);
+    ledModeDispensing = (LEDMode)_preferences.getChar(KEY_LEDMODE_DISPENSING, eFadingFast);
     encoderDirection = _preferences.getChar(KEY_ENCODER, 1);
-    screenSaverMode = _preferences.getUShort(KEY_SCREENSAVER, e30s);
+    screenSaverMode = _preferences.getChar(KEY_SCREENSAVER, e30s);
 
     _currentConfigindex = -1;
     for (uint8_t index = 0; index < _fileCount; index++)
@@ -118,10 +118,10 @@ void Configuration::Save()
   if (_preferences.begin(SETTINGS_NAME, READWRITE_MODE))
   {
     _preferences.putString(KEY_CONFIGFILE, GetCurrent());
-    _preferences.putUShort(KEY_LEDMODE_IDLE, ledModeIdle);
-    _preferences.putUShort(KEY_LEDMODE_DISPENSING, ledModeDispensing);
+    _preferences.putChar(KEY_LEDMODE_IDLE, ledModeIdle);
+    _preferences.putChar(KEY_LEDMODE_DISPENSING, ledModeDispensing);
     _preferences.putChar(KEY_ENCODER, encoderDirection);
-    _preferences.putUShort(KEY_SCREENSAVER, screenSaverMode);
+    _preferences.putChar(KEY_SCREENSAVER, screenSaverMode);
 
     ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
   }

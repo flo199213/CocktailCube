@@ -1032,7 +1032,7 @@ void StateMachine::FctSettings(MixerEvent event)
                 {
                   // Incrementing or decrementing the LED settings value taking into account the overflow
                   LEDMode* ledMode = _currentSetting == eLEDIdle ? &Config.ledModeIdle : &Config.ledModeDispensing;
-                  uint16_t ledModeMax = _currentSetting == eLEDIdle ? LEDIdleModeMax : LEDDispensingModeMax;
+                  int8_t ledModeMax = _currentSetting == eLEDIdle ? LEDIdleModeMax : LEDDispensingModeMax;
                   if (currentEncoderIncrements < 0)
                   {
                     *ledMode = *ledMode + 1 >= ledModeMax ? eOff : (LEDMode)(*ledMode + 1);
@@ -1172,7 +1172,8 @@ void StateMachine::FctScreenSaver(MixerEvent event)
         // Draw screen saver
         Display.DrawScreenSaver();
 
-        // Check user input (Last user interaction will be set)
+        // Reset and ignore user input
+        // (Last user action timestamp will be set in interrupts)
         EncoderButton.GetEncoderIncrements();
         EncoderButton.IsLongButtonPress(); 
         EncoderButton.IsButtonPress();

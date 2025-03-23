@@ -88,18 +88,18 @@
 //===============================================================
 // Enums
 //===============================================================
-enum MixtureLiquid : uint16_t
+enum MixtureLiquid : int8_t
 {
   eLiquid1 = 0,
   eLiquid2 = 1,
   eLiquid3 = 2,
   eLiquidAll = 3,
-  eLiquidNone = 0xFFFF
+  eLiquidNone = 0x7F
 };
-const uint16_t MixtureLiquidDashboardMax = 3;
-const uint16_t MixtureLiquidCleaningMax = 4;
+const int8_t MixtureLiquidDashboardMax = 3;
+const int8_t MixtureLiquidCleaningMax = 4;
 
-enum MixerState : uint16_t
+enum MixerState : int8_t
 {
   eMenu = 0,
   eDashboard = 1,
@@ -110,14 +110,14 @@ enum MixerState : uint16_t
   eBar = 6
 };
 
-enum MixerEvent : uint16_t
+enum MixerEvent : int8_t
 {
   eEntry = 0,
   eMain = 1,
   eExit = 2
 };
 
-enum BarBottle : uint16_t
+enum BarBottle : int8_t
 {
   eSparklingWater = 0,
   eEmpty = 1,
@@ -125,9 +125,9 @@ enum BarBottle : uint16_t
   eWhiteWine = 3,
   eRoseWine = 4
 };
-const uint16_t BarBottleMax = 5;
+const int8_t BarBottleMax = 5;
 
-enum MixerSetting : uint16_t
+enum MixerSetting : int8_t
 {
   ePWM = 0,
   eWLAN = 1,
@@ -137,9 +137,9 @@ enum MixerSetting : uint16_t
   eEncoder = 5,
   eScreen = 6
 };
-const uint16_t MixerSettingMax = 7;
+const int8_t MixerSettingMax = 7;
 
-enum LEDMode : uint16_t
+enum LEDMode : int8_t
 {
   eOff = 0,
   eOn = 1,
@@ -148,10 +148,10 @@ enum LEDMode : uint16_t
   eFadingSlow = 4,
   eFadingFast = 5
 };
-const uint16_t LEDIdleModeMax = 2;
-const uint16_t LEDDispensingModeMax = 6;
+const int8_t LEDIdleModeMax = 2;
+const int8_t LEDDispensingModeMax = 6;
 
-enum ScreensaverMode : uint32_t
+enum ScreensaverMode : int8_t
 {
   eNone = 0,
   e2s = 1,
@@ -160,7 +160,7 @@ enum ScreensaverMode : uint32_t
   e1min = 4,
   e5min = 5
 };
-const uint16_t ScreensaverModeMax = 6;
+const int8_t ScreensaverModeMax = 6;
 
 //===============================================================
 // Configuration class
@@ -221,7 +221,7 @@ class Configuration
     volatile int8_t encoderDirection = 1;
 
     // Screen saver setting
-    uint32_t screenSaverMode = e30s;
+    int8_t screenSaverMode = e30s;
 
     // Constructor
     Configuration();
