@@ -126,6 +126,7 @@ int16_t EncoderButtonDriver::GetEncoderIncrements()
 
 //===============================================================
 // Interrupt on button changing state
+// IRAM_ATTR function: No communication !!
 //===============================================================
 void EncoderButtonDriver::ButtonEvent()
 {
@@ -147,6 +148,7 @@ void EncoderButtonDriver::ButtonEvent()
 
 //===============================================================
 // Should be called if encoder edge A changed
+// IRAM_ATTR function: No communication !!
 //===============================================================
 void EncoderButtonDriver::DoEncoderA()
 {
@@ -164,6 +166,7 @@ void EncoderButtonDriver::DoEncoderA()
 
 //===============================================================
 // Should be called if encoder edge B changed
+// IRAM_ATTR function: No communication !!
 //===============================================================
 void EncoderButtonDriver::DoEncoderB()
 {

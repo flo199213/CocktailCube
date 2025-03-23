@@ -42,15 +42,15 @@ class EncoderButtonDriver
 
     // Returns the counted encoder pulses since the last query and resets the counter
     int16_t GetEncoderIncrements();
+    
+    // Should be called if button was pressed or released
+    void IRAM_ATTR ButtonEvent();
 
     // Should be called if encoder edge A changed
     void IRAM_ATTR DoEncoderA();
 
     // Should be called if encoder edge B changed
     void IRAM_ATTR DoEncoderB();
-    
-    // Should be called if button was pressed or released
-    void IRAM_ATTR ButtonEvent();
 
   private:
     // Pin definitions
