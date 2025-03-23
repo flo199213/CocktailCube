@@ -86,20 +86,6 @@ void FlowMeterDriver::Save()
 }
 
 //===============================================================
-// Returns true, if a save call is pending to be executed by the
-// loop task
-//===============================================================
-void FlowMeterDriver::SaveAsync()
-{
-  if (_isSavePending)
-  {
-    _isSavePending = false;
-    ESP_LOGI(TAG, "Save flow meter is pending");
-    Save();
-  }
-}
-
-//===============================================================
 // Returns current flow meter value for liquid 1
 //===============================================================
 double FlowMeterDriver::GetValueLiquid1()
@@ -131,12 +117,4 @@ void FlowMeterDriver::AddFlowTime(uint32_t valueLiquid1_ms, uint32_t valueLiquid
   _valueLiquid1_L += (double)valueLiquid1_ms * FLOWRATE1;
   _valueLiquid2_L += (double)valueLiquid2_ms * FLOWRATE2;
   _valueLiquid3_L += (double)valueLiquid3_ms * FLOWRATE3;
-}
-
-//===============================================================
-// Requests a save values from interrupt service routine
-//===============================================================
-void FlowMeterDriver::RequestSaveAsync()
-{
-  _isSavePending = true;
 }

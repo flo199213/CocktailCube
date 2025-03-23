@@ -124,27 +124,12 @@ LEDMode lastLEDMode = eOff;
 
 //===============================================================
 // Interrupt on pumps enable changing state
+// If rising edge (button was released) -> disable pumps
+// If falling edge (button was pressed) -> enable pumps
 //===============================================================
 void IRAM_ATTR ISR_Pumps_Enable()
 {
-  // If rising edge (button was released) -> disable pumps
-  // If falling edge (button was pressed) -> enable pumps
-  if (digitalRead(PIN_PUMPS_ENABLE))
-  {
-    // Disable pump power
-    Pumps.Disable();
-
-    // Request save flow values to flash
-    FlowMeter.RequestSaveAsync();
-  }
-  else if (Statemachine.GetCurrentState() == eDashboard ||
-    Statemachine.GetCurrentState() == eCleaning)
-  {
-    // Enable pump power
-     Pumps.Enable();
-  }
-
-  // Update last user interaction
+  Pumps.Enable(digitalRead(PIN_PUMPS_ENABLE) == LOW);
   Systemhelper.SetLastUserAction();
 }
 
@@ -373,9 +358,6 @@ void loop()
 
   // Update pump outputs
   Pumps.Update();
-
-  // Save flow meter values to flash if requested
-  FlowMeter.SaveAsync();
 
   // Run statemachine with main task event
   Statemachine.Execute(eMain);

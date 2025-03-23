@@ -125,11 +125,16 @@ bool StateMachine::UpdateValuesFromWifi(MixtureLiquid liquid, int16_t increments
 }
 
 //===============================================================
-// Returns the current mixer state of the state machine
+// Returns the info if pump enable is allowed
+// IRAM_ATTR function: No communication !!
 //===============================================================
-MixerState StateMachine::GetCurrentState()
+bool StateMachine::CanEnablePumps()
 {
-  return _currentState;
+  return _currentState == eDashboard ||
+    _currentState == eCleaning ||
+    (_currentState == eScreenSaver && 
+    (_lastState == eDashboard ||
+    _lastState == eCleaning));
 }
 
 //===============================================================
@@ -343,6 +348,7 @@ void StateMachine::FctMenu(MixerEvent event)
 
         // Reset and ignore user input
         EncoderButton.GetEncoderIncrements();
+        EncoderButton.IsLongButtonPress(); 
         EncoderButton.IsButtonPress();
       }
       break;
@@ -683,7 +689,7 @@ void StateMachine::FctDashboard(MixerEvent event)
       break;
     case eExit:
     default:
-      Pumps.Disable();
+      Pumps.Enable(false);
       break;
   }
 }
@@ -705,8 +711,9 @@ void StateMachine::FctCleaning(MixerEvent event)
         delay(500);
 
         // Reset and ignore user input
+        EncoderButton.GetEncoderIncrements();
+        EncoderButton.IsLongButtonPress(); 
         EncoderButton.IsButtonPress();
-        EncoderButton.IsLongButtonPress();
       }
       break;
     case eMain:
@@ -761,7 +768,7 @@ void StateMachine::FctCleaning(MixerEvent event)
       break;
     case eExit:
     default:
-      Pumps.Disable();
+      Pumps.Enable(false);
       break;
   }
 }

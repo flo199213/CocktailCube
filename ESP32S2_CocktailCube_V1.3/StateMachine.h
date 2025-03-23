@@ -41,8 +41,8 @@ class StateMachine
     // Updates a liquid values from wifi
     bool UpdateValuesFromWifi(MixtureLiquid liquid, int16_t increments_Degrees);
 
-    // Returns the current mixer state of the state machine
-    MixerState IRAM_ATTR GetCurrentState();
+    // Returns the info if pump enable is allowed
+    bool IRAM_ATTR CanEnablePumps();
     
     // Returns the current menu state
     MixerState GetMenuState();

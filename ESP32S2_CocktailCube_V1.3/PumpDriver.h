@@ -15,6 +15,7 @@
 #include <Arduino.h>
 #include <esp_log.h>
 #include "Config.h"
+#include "StateMachine.h"
 #include "FlowMeterDriver.h"
 
 //===============================================================
@@ -44,12 +45,6 @@ class PumpDriver
     // Save settings to flash
     void Save();
 
-    // Enables pump output
-    void IRAM_ATTR Enable();
-    
-    // Disables pump output
-    void IRAM_ATTR Disable();
-
     // Return true, if the pumps are enabled. Otherwise false
     bool IsEnabled();
 
@@ -63,7 +58,10 @@ class PumpDriver
     uint32_t GetCycleTimespan();
     
     // Should be called every < 50 ms
-    void IRAM_ATTR Update();
+    void Update();
+    
+    // Enables or disables pump output
+    void IRAM_ATTR Enable(bool enable);
 
   private:
     // Preferences variable
@@ -77,24 +75,28 @@ class PumpDriver
     // VCC voltage
     double _vccVoltage;
 
+    // Enabled values
+    bool _isPumpEnabled = false;
+    bool _enablePump1 = false;
+    bool _enablePump2 = false;
+    bool _enablePump3 = false;
+
     // Timing values
     uint32_t _cycleTimespan_ms = DEFAULT_CYCLE_TIMESPAN_MS;
-    bool _isPumpEnabled = false;
     uint32_t _pwmPump1_ms = 0;
     uint32_t _pwmPump2_ms = 0;
     uint32_t _pwmPump3_ms = 0;
 
     // Last variables for edge detection
-    bool _lastEnablePump1 = false;
-    bool _lastEnablePump2 = false;
-    bool _lastEnablePump3 = false;
+    bool _lastIsPumpEnabled = false;
+    uint32_t _lastUpdate_ms = 0;
     uint32_t _lastPumpCycleStart_ms = 0;
-    
-    // Enables pump output (internal)
-    void EnableInternal();
 
-    // Disables pump output (internal)
-    void DisableInternal();
+    // Enables pump output
+    void IRAM_ATTR InternalEnable();
+    
+    // Disables pump output
+    void IRAM_ATTR InternalDisable();
 };
 
 //===============================================================

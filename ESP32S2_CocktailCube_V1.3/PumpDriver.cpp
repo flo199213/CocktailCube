@@ -45,10 +45,10 @@ void PumpDriver::Begin(uint8_t pinPump1, uint8_t pinPump2, uint8_t pinPump3, dou
   _vccVoltage = vccVoltage;
 
   // Load settings
-  Pumps.Load();
+  Load();
 
   // Disable pump output
-  DisableInternal();
+  InternalDisable();
   
   // Log startup info
   ESP_LOGI(TAG, "Finished initializing pump driver");
@@ -90,91 +90,6 @@ void PumpDriver::Save()
   }
 
   _preferences.end();
-}
-
-//===============================================================
-// Enables pump output
-//===============================================================
-void PumpDriver::Enable()
-{
-  if (_isPumpEnabled)
-  {
-    return;
-  }
-
-  // Enable internal gpios
-  EnableInternal();
- 
-  // Set enabled flag to true
-  // -> Update function is unlocked
-  _isPumpEnabled = true;
-
-  // Set log info
-  ESP_LOGI(TAG, "Pumps enabled");
-}
-
-//===============================================================
-// Disables pump output
-//===============================================================
-void PumpDriver::Disable()
-{
-  if (!_isPumpEnabled)
-  {
-    return;
-  }
-  
-  // Set enabled flag to false 
-  // -> Update function is locked
-  _isPumpEnabled = false;
-
-  // Disable internal gpios
-  DisableInternal();
-  
-  // Set log info
-  ESP_LOGI(TAG, "Pumps disabled");
-}
-
-//===============================================================
-// Enables pump output (internal)
-//===============================================================
-void PumpDriver::EnableInternal()
-{
-  // Set pins to output direction (enable)
-  pinMode(_pinPump1, OUTPUT);
-  pinMode(_pinPump2, OUTPUT);
-  pinMode(_pinPump3, OUTPUT);
-}
-
-//===============================================================
-// Disables pump output (internal)
-//===============================================================
-void PumpDriver::DisableInternal()
-{
-  // Set pins to input direction (disable)
-  pinMode(_pinPump1, INPUT);
-  pinMode(_pinPump2, INPUT);
-  pinMode(_pinPump3, INPUT);
-  
-  // Disable pumps, just to be sure
-  digitalWrite(_pinPump1, LOW);
-  digitalWrite(_pinPump2, LOW);
-  digitalWrite(_pinPump3, LOW);
-
-  // Save timestamp
-  uint32_t onTimestamp_ms = _lastPumpCycleStart_ms;
-  uint32_t offTimestamp_ms = millis();
-
-  // Add already passed flow time to flow meter if pump is not already off
-  uint32_t passedFlowTime = offTimestamp_ms - onTimestamp_ms;
-  uint32_t flowTime1_ms = _lastEnablePump1 == true ? passedFlowTime : 0;
-  uint32_t flowTime2_ms = _lastEnablePump2 == true ? passedFlowTime : 0;
-  uint32_t flowTime3_ms = _lastEnablePump3 == true ? passedFlowTime : 0;
-  FlowMeter.AddFlowTime(flowTime1_ms, flowTime2_ms, flowTime3_ms);
-
-  // All pumps are now disabled
-  _lastEnablePump1 = false;
-  _lastEnablePump2 = false;
-  _lastEnablePump3 = false;
 }
 
 //===============================================================
@@ -237,13 +152,12 @@ uint32_t PumpDriver::GetCycleTimespan()
 //===============================================================
 void PumpDriver::Update()
 {
-  if (!_isPumpEnabled)
-  {
-    return;
-  }
-  
   // Save absolute time for pwm calculations
   uint32_t absoluteTime_ms = millis();
+
+  // Add flow times from last update
+  uint32_t flowTime_ms = absoluteTime_ms - _lastUpdate_ms;
+  FlowMeter.AddFlowTime(_enablePump1 ? flowTime_ms : 0, _enablePump2 ? flowTime_ms : 0, _enablePump3 ? flowTime_ms : 0);
 
   // New cycle starts, reset last pump cycle timestamp
   if ((absoluteTime_ms - _lastPumpCycleStart_ms) > _cycleTimespan_ms)
@@ -255,28 +169,85 @@ void PumpDriver::Update()
   uint32_t relativeTime_ms = absoluteTime_ms - _lastPumpCycleStart_ms;
 
   // Check if pumps must be powered on or off
-  bool enablePump1 = relativeTime_ms < _pwmPump1_ms;
-  bool enablePump2 = relativeTime_ms < _pwmPump2_ms;
-  bool enablePump3 = relativeTime_ms < _pwmPump3_ms;
+  _enablePump1 = _isPumpEnabled && relativeTime_ms < _pwmPump1_ms;
+  _enablePump2 = _isPumpEnabled && relativeTime_ms < _pwmPump2_ms;
+  _enablePump3 = _isPumpEnabled && relativeTime_ms < _pwmPump3_ms;
 
   // Write digital pins
-  digitalWrite(_pinPump1, enablePump1 ? HIGH : LOW);
-  digitalWrite(_pinPump2, enablePump2 ? HIGH : LOW);
-  digitalWrite(_pinPump3, enablePump3 ? HIGH : LOW);
+  digitalWrite(_pinPump1, _enablePump1 ? HIGH : LOW);
+  digitalWrite(_pinPump2, _enablePump2 ? HIGH : LOW);
+  digitalWrite(_pinPump3, _enablePump3 ? HIGH : LOW);
 
-  // Add flow times when powering off (falling edge)
-  uint32_t flowTime1_ms = _lastEnablePump1 == true && enablePump1 == false ? _pwmPump1_ms : 0;
-  uint32_t flowTime2_ms = _lastEnablePump2 == true && enablePump2 == false ? _pwmPump2_ms : 0;
-  uint32_t flowTime3_ms = _lastEnablePump3 == true && enablePump3 == false ? _pwmPump3_ms : 0;
-  FlowMeter.AddFlowTime(flowTime1_ms, flowTime2_ms, flowTime3_ms);
   // Avoid screensaver while dispensing
   if (_isPumpEnabled)
   {
     Systemhelper.SetLastUserAction();
   }
 
+  // Check for pumps disable event
+  if (_lastIsPumpEnabled &&
+    !_isPumpEnabled)
+  {
+    // Save flow meter values to flash
+    FlowMeter.Save();
+  }
+
   // Save enabled state for next update
-  _lastEnablePump1 = enablePump1;
-  _lastEnablePump2 = enablePump2;
-  _lastEnablePump3 = enablePump3;
+  _lastUpdate_ms = absoluteTime_ms;
+  _lastIsPumpEnabled = _isPumpEnabled;
+}
+
+//===============================================================
+// Enables or disables pump output
+// IRAM_ATTR function: No communication !!
+//===============================================================
+void PumpDriver::Enable(bool enable)
+{
+  if (enable && Statemachine.CanEnablePumps())
+  {
+    // Enable pump power
+    Pumps.InternalEnable();
+  }
+  else
+  {
+    // Disable pump power
+    Pumps.InternalDisable();
+  }
+}
+
+//===============================================================
+// Enables pump output
+// IRAM_ATTR function: No communication !!
+//===============================================================
+void PumpDriver::InternalEnable()
+{
+  // Set pins to output direction (enable)
+  pinMode(_pinPump1, OUTPUT);
+  pinMode(_pinPump2, OUTPUT);
+  pinMode(_pinPump3, OUTPUT);
+ 
+  // Set enabled flag to true
+  // -> Update function is unlocked
+  _isPumpEnabled = true;
+}
+
+//===============================================================
+// Disables pump output
+// IRAM_ATTR function: No communication !!
+//===============================================================
+void PumpDriver::InternalDisable()
+{ 
+  // Set enabled flag to false 
+  // -> Update function is locked
+  _isPumpEnabled = false;
+
+  // Set pins to input direction (disable)
+  pinMode(_pinPump1, INPUT);
+  pinMode(_pinPump2, INPUT);
+  pinMode(_pinPump3, INPUT);
+  
+  // Disable pumps, just to be sure
+  digitalWrite(_pinPump1, LOW);
+  digitalWrite(_pinPump2, LOW);
+  digitalWrite(_pinPump3, LOW);
 }
