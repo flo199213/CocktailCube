@@ -168,50 +168,50 @@ const int8_t ScreensaverModeMax = 6;
 class Configuration
 {
   public:
-    bool isMixer;
+    bool isMixer = true;
     
-    String mixerName;
+    String mixerName = "CocktailCube";
 
-    String liquidName1;
-    String liquidName2;
-    String liquidName3;
+    String liquidName1 = "Liquid 1";
+    String liquidName2 = "Liquid 2";
+    String liquidName3 = "Liquid 3";
 
-    int16_t liquidAngle1;
-    int16_t liquidAngle2;
-    int16_t liquidAngle3;
+    int16_t liquidAngle1 = 0;
+    int16_t liquidAngle2 = 120;
+    int16_t liquidAngle3 = 240;
 
-    String liquidColor1;
-    String liquidColor2;
-    String liquidColor3;
+    String liquidColor1 = "#FE5000";
+    String liquidColor2 = "#01FFFF";
+    String liquidColor3 = "#00E784";
     
-    uint16_t tftColorLiquid1;
-    uint16_t tftColorLiquid2;
-    uint16_t tftColorLiquid3;
-    uint16_t tftColorStartPage;
-    uint16_t tftColorStartPageForeground;
-    uint16_t tftColorStartPageBackground;
-    uint16_t tftColorTextHeader;
-    uint16_t tftColorTextBody;
-    uint16_t tftColorInfoBoxBorder;
-    uint16_t tftColorInfoBoxForeground;
-    uint16_t tftColorInfoBoxBackground;
-    uint16_t tftColorMenuSelector;
-    uint16_t tftColorForeground;
-    uint16_t tftColorBackground;
+    uint16_t tftColorLiquid1 = 0xFC00;
+    uint16_t tftColorLiquid2 = 0x0F1F;
+    uint16_t tftColorLiquid3 = 0x0390;
+    uint16_t tftColorStartPage = 0xFC00;
+    uint16_t tftColorStartPageForeground = 0xDF9E;
+    uint16_t tftColorStartPageBackground = 0xA6DC;
+    uint16_t tftColorTextHeader = 0xFC00;
+    uint16_t tftColorTextBody = 0xFFFF;
+    uint16_t tftColorInfoBoxBorder = 0xFC00;
+    uint16_t tftColorInfoBoxForeground = 0xFC00;
+    uint16_t tftColorInfoBoxBackground = 0xFFFF;
+    uint16_t tftColorMenuSelector = 0xFC00;
+    uint16_t tftColorForeground = 0xFFFF;
+    uint16_t tftColorBackground = 0x0000;
 
-    String imageLogo;
-    String imageGlass;
-    String imageBottle1;
-    String imageBottle2;
-    String imageBottle3;
-    String imageBottle4;
+    String imageLogo = "";
+    String imageGlass = "";
+    String imageBottle1 = "";
+    String imageBottle2 = "";
+    String imageBottle3 = "";
+    String imageBottle4 = "";
 
-    int16_t tftLogoPosX;
-    int16_t tftLogoPosY;
-    int16_t tftGlassPosX;
-    int16_t tftGlassPosY;
-    int16_t tftBottlePosX;
-    int16_t tftBottlePosY;
+    int16_t tftLogoPosX = 0;
+    int16_t tftLogoPosY = 0;
+    int16_t tftGlassPosX = 0;
+    int16_t tftGlassPosY = 0;
+    int16_t tftBottlePosX = 0;
+    int16_t tftBottlePosY = 0;
 
     // LED settings
     LEDMode ledModeIdle = eOn;
