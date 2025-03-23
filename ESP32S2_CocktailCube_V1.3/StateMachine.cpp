@@ -683,6 +683,7 @@ void StateMachine::FctDashboard(MixerEvent event)
       break;
     case eExit:
     default:
+      Pumps.Disable();
       break;
   }
 }
@@ -760,6 +761,7 @@ void StateMachine::FctCleaning(MixerEvent event)
       break;
     case eExit:
     default:
+      Pumps.Disable();
       break;
   }
 }
