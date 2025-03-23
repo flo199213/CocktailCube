@@ -24,6 +24,13 @@
 #include "WifiHandler.h"
 
 //===============================================================
+// Defines
+//===============================================================
+#define KEY_BARBOTTLE1          "BarBottle1" // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+#define KEY_BARBOTTLE2          "BarBottle2" // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+#define KEY_BARBOTTLE3          "BarBottle3" // Key name: Maximum string length is 15 bytes, excluding a zero terminator.
+
+//===============================================================
 // Class for state machine handling
 //===============================================================
 class StateMachine
@@ -34,6 +41,12 @@ class StateMachine
 
     // Initializes the state machine
     void Begin(uint8_t pinBuzzer);
+    
+    // Load settings from flash
+    void Load();
+
+    // Save settings to flash
+    void Save();
 
     // Updates cycle timespan value from wifi
     bool UpdateValuesFromWifi(uint32_t cycletimespan_ms);
@@ -81,6 +94,9 @@ class StateMachine
     void Execute(MixerEvent event);
 
   private:
+    // Preferences variable
+    Preferences _preferences;
+
     // Pin definitions
     uint8_t _pinBuzzer;
 

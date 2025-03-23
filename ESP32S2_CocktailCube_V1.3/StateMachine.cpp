@@ -41,9 +41,54 @@ void StateMachine::Begin(uint8_t pinBuzzer)
 
   // Set Defaults
   SetMixtureDefaults();
+
+  // Load settings
+  Load();
   
   // Log startup info
   ESP_LOGI(TAG, "Finished initializing state machine");
+}
+
+//===============================================================
+// Load settings from flash
+//===============================================================
+void StateMachine::Load()
+{
+  if (_preferences.begin(SETTINGS_NAME, READONLY_MODE))
+  {
+    _barBottle1 = (BarBottle)_preferences.getChar(KEY_BARBOTTLE1, eRedWine);
+    _barBottle2 = (BarBottle)_preferences.getChar(KEY_BARBOTTLE2, eWhiteWine);
+    _barBottle3 = (BarBottle)_preferences.getChar(KEY_BARBOTTLE3, eRoseWine);
+
+    ESP_LOGI(TAG, "Preferences successfully loaded from '%s'", SETTINGS_NAME);
+  }
+  else
+  {
+    ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
+  }
+
+  _preferences.end();
+}
+
+//===============================================================
+// Save settings to flash
+//===============================================================
+void StateMachine::Save()
+{
+  if (_preferences.begin(SETTINGS_NAME, READWRITE_MODE))
+  {
+    _preferences.putChar(KEY_BARBOTTLE1, _barBottle1);
+    _preferences.putChar(KEY_BARBOTTLE2, _barBottle2);
+    _preferences.putChar(KEY_BARBOTTLE3, _barBottle3);
+
+    ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
+  }
+  else
+  {
+    ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
+  }
+
+  _preferences.end();
 }
 
 //===============================================================
@@ -897,6 +942,9 @@ void StateMachine::FctBar(MixerEvent event)
           
           // Draw bar
           Display.DrawBar(false);
+          
+          // Save settings
+          Save();
           
           // Debounce settings change
           delay(200);
