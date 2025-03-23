@@ -269,6 +269,11 @@ void PumpDriver::Update()
   uint32_t flowTime2_ms = _lastEnablePump2 == true && enablePump2 == false ? _pwmPump2_ms : 0;
   uint32_t flowTime3_ms = _lastEnablePump3 == true && enablePump3 == false ? _pwmPump3_ms : 0;
   FlowMeter.AddFlowTime(flowTime1_ms, flowTime2_ms, flowTime3_ms);
+  // Avoid screensaver while dispensing
+  if (_isPumpEnabled)
+  {
+    Systemhelper.SetLastUserAction();
+  }
 
   // Save enabled state for next update
   _lastEnablePump1 = enablePump1;

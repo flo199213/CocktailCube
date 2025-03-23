@@ -62,9 +62,6 @@ bool EncoderButtonDriver::IsButtonPress()
   {
     // Debounce
     delay(100);
-    
-    // Update last user interaction
-    Systemhelper.SetLastUserAction();
   }
 
   // Reset button press flag
@@ -93,9 +90,6 @@ bool EncoderButtonDriver::IsLongButtonPress()
     // Suppress upcoming next short button press (Long button press appears while pressing
     // the button. Next button press release is therefore no short button press)
     _suppressShortButtonPress = true;
-    
-    // Update last user interaction
-    Systemhelper.SetLastUserAction();
   }
   
   // Return result
@@ -113,12 +107,6 @@ int16_t EncoderButtonDriver::GetEncoderIncrements()
   
   // Reset the counter
   _encoderIncrements = 0;
-
-  if (currentEncoderIncrements != 0)
-  {
-    // Update last user interaction
-    Systemhelper.SetLastUserAction();
-  }
 
   // Return increments
   return currentEncoderIncrements;

@@ -154,6 +154,7 @@ void IRAM_ATTR ISR_Pumps_Enable()
 void IRAM_ATTR ISR_EncoderButton()
 {
   EncoderButton.ButtonEvent();
+  Systemhelper.SetLastUserAction();
 }
 
 //===============================================================
@@ -162,6 +163,7 @@ void IRAM_ATTR ISR_EncoderButton()
 void IRAM_ATTR ISR_EncoderA()
 {
   EncoderButton.DoEncoderA();
+  Systemhelper.SetLastUserAction();
 }
 
 //===============================================================
@@ -170,6 +172,7 @@ void IRAM_ATTR ISR_EncoderA()
 void IRAM_ATTR ISR_EncoderB()
 {
   EncoderButton.DoEncoderB();
+  Systemhelper.SetLastUserAction();
 }
 
 //===============================================================
