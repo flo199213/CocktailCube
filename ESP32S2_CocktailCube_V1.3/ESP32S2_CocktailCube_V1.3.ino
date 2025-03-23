@@ -177,6 +177,9 @@ void setup(void)
   ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
   ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
 
+  // Initialize system helper
+  Systemhelper.Begin();
+
   // Initialize hardware SPI (Force HSPI)
   ESP_LOGI(TAG, "Initialize SPI");
   SPIClass *spi = new SPIClass(HSPI);
@@ -199,9 +202,6 @@ void setup(void)
     ESP_LOGE(TAG, "Error: Open SPIFFS failed");
     delay(3000);
   }
-
-  // Initialize system helper
-  Systemhelper.Begin();
 
   // Loading config file
   ESP_LOGI(TAG, "Loading config file");
