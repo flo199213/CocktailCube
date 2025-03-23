@@ -212,7 +212,53 @@ String SystemHelper::GetResetReasonString(int8_t cpu)
     case EFUSE_RESET:
       return "EFUSE_RESET (efuse reset digital core)";
     default:
-      return "NO_MEAN";
+      return "UNKNOWN_RESET";
+  }
+}
+
+//===============================================================
+// Returns the reset reason as a short string
+//===============================================================
+String SystemHelper::GetShortResetReasonString(int8_t cpu)
+{
+  RESET_REASON reason = rtc_get_reset_reason(cpu);
+
+  switch (reason)
+  {
+    case POWERON_RESET:
+      return "POWERON_RESET";
+    case RTC_SW_SYS_RESET:
+      return "SW_RESET";
+    case DEEPSLEEP_RESET:
+      return "DEEPSLEEP_RESET";
+    case TG0WDT_SYS_RESET:
+      return "TG0WDT_SYS_RESET";
+    case TG1WDT_SYS_RESET:
+      return "TG1WDT_SYS_RESET";
+    case RTCWDT_SYS_RESET:
+      return "RTCWDT_SYS_RESET";
+    case INTRUSION_RESET:
+      return "INTRUSION_RESET";
+    case TG0WDT_CPU_RESET:
+      return "TGWDT_CPU_RESET";
+    case RTC_SW_CPU_RESET:
+      return "SW_CPU_RESET";
+    case RTCWDT_CPU_RESET:
+      return "RTCWDT_CPU_RESET";
+    case RTCWDT_BROWN_OUT_RESET:
+      return "RTCWDT_BROWN_OUT_RESET";
+    case RTCWDT_RTC_RESET:
+      return "RTCWDT_RTC_RESET";
+    case TG1WDT_CPU_RESET:
+      return "TG1WDT_CPU_RESET";
+    case SUPER_WDT_RESET:
+      return "SUPER_WDT_RESET";
+    case GLITCH_RTC_RESET:
+      return "GLITCH_RTC_RESET";
+    case EFUSE_RESET:
+      return "EFUSE_RESET";
+    default:
+      return "UNKNOWN_RESET";
   }
 }
 

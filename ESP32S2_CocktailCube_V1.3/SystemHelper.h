@@ -40,6 +40,9 @@ class SystemHelper
     // Returns the reset reason as string
     String GetResetReasonString(int8_t cpu);
 
+    // Returns the reset reason as a short string
+    String GetShortResetReasonString(int8_t cpu);
+
     // Sets the timestamp of the last user action to the current time
     void IRAM_ATTR SetLastUserAction();
 
