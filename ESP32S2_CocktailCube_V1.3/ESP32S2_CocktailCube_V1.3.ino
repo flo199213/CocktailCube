@@ -179,6 +179,7 @@ void setup(void)
 
   // Initialize system helper
   Systemhelper.Begin();
+  String resetReason = Systemhelper.GetShortResetReasonString(0);
 
   // Initialize hardware SPI (Force HSPI)
   ESP_LOGI(TAG, "Initialize SPI");
@@ -191,6 +192,15 @@ void setup(void)
   Display.Begin(tft);
   ESP_LOGI(TAG, "HeapSize : %d", ESP.getHeapSize());
   ESP_LOGI(TAG, "HeapFree : %d", ESP.getFreeHeap());
+
+  // Show reset reason if not a normal power on reset
+  if (!resetReason.equals("POWERON_RESET"))
+  {
+    // Debug reset information on display
+    Display.DrawInfoBox("Warning", resetReason);
+    ESP_LOGE(TAG, "Warning: Unnormal reset reason");
+    delay(3000);
+  }
 
   // Initialize SPIFFS
   ESP_LOGI(TAG, "Initialize SPIFFS");
