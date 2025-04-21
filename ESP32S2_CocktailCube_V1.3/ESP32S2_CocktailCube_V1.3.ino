@@ -165,7 +165,7 @@ void IRAM_ATTR ISR_EncoderB()
 //===============================================================
 void setup(void)
 {
- // Start USB CDC // (redundant, for build verification purposes only)
+  // Start USB CDC // (redundant, for build verification purposes only)
   USBSerial.begin(); // <--- If you get an compile error here, you must
   // enable "USB CDC On Boot" in the Arduino IDE Target settings for ESP32-S2!
 
