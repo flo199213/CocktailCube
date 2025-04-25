@@ -267,7 +267,10 @@ String SystemHelper::GetShortResetReasonString(int8_t cpu)
 //===============================================================
 void SystemHelper::SetLastUserAction()
 {
+  // Set timestamp
+  portENTER_CRITICAL_ISR(&_mux);
   _lastUserAction = millis();
+  portEXIT_CRITICAL_ISR(&_mux);
 }
 
 //===============================================================
@@ -275,5 +278,12 @@ void SystemHelper::SetLastUserAction()
 //===============================================================
 uint32_t SystemHelper::GetLastUserAction()
 {
-  return _lastUserAction;
+  uint32_t lastUserAction;
+  
+  // Get timestamp
+  portENTER_CRITICAL_ISR(&_mux);
+  lastUserAction = _lastUserAction;
+  portEXIT_CRITICAL_ISR(&_mux);
+
+  return lastUserAction;
 }

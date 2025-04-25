@@ -53,22 +53,25 @@ class EncoderButtonDriver
     void IRAM_ATTR DoEncoderB();
 
   private:
+    // Port mux
+    portMUX_TYPE _mux = portMUX_INITIALIZER_UNLOCKED;
+
     // Pin definitions
-    uint8_t _pinEncoderOutA;
-    uint8_t _pinEncoderOutB;
-    uint8_t _pinEncoderButton;
+    volatile uint8_t _pinEncoderOutA;                 // volatile for ISR use
+    volatile uint8_t _pinEncoderOutB;                 // volatile for ISR use
+    volatile uint8_t _pinEncoderButton;               // volatile for ISR use
 
     // Interrupt service routine variables
-    volatile bool _A_set = false;
-    volatile bool _B_set = false;
+    volatile bool _A_set = false;                     // volatile for ISR use
+    volatile bool _B_set = false;                     // volatile for ISR use
 
     // Rotary encoder variables
-    volatile int16_t _encoderIncrements = 0;
+    volatile int16_t _encoderIncrements = 0;          // volatile for ISR use
 
     // Encoder state variables
-    volatile bool _isButtonPress = false;
-    volatile uint32_t _lastButtonPress_ms = 0;
-    volatile bool _suppressShortButtonPress = false;
+    volatile bool _isButtonPress = false;             // volatile for ISR use
+    volatile uint32_t _lastButtonPress_ms = 0;        // volatile for ISR use
+    volatile bool _suppressShortButtonPress = false;  // volatile for ISR use
 };
 
 //===============================================================

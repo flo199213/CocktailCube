@@ -49,10 +49,12 @@ class SystemHelper
     // Return the timestamp of the last user action
     uint32_t GetLastUserAction();
 
-  private:    
+  private:
+    // Port mux
+    portMUX_TYPE _mux = portMUX_INITIALIZER_UNLOCKED;
 
     // Timestamp of last user action
-    uint32_t _lastUserAction = 0;
+    volatile uint32_t _lastUserAction = 0;
 };
 
 //===============================================================

@@ -47,8 +47,15 @@ void PumpDriver::Begin(uint8_t pinPump1, uint8_t pinPump2, uint8_t pinPump3, dou
   // Load settings
   Load();
 
-  // Disable pump output
-  InternalDisable();
+  // Set pins to output direction
+  pinMode(_pinPump1, OUTPUT);
+  pinMode(_pinPump2, OUTPUT);
+  pinMode(_pinPump3, OUTPUT);
+  
+  // Disable pumps
+  digitalWrite(_pinPump1, LOW);
+  digitalWrite(_pinPump2, LOW);
+  digitalWrite(_pinPump3, LOW);
   
   // Log startup info
   ESP_LOGI(TAG, "Finished initializing pump driver");
@@ -97,7 +104,14 @@ void PumpDriver::Save()
 //===============================================================
 bool PumpDriver::IsEnabled()
 {
-  return _isPumpEnabled;
+  bool isPumpEnabled = false;
+
+  // Save current state
+  portENTER_CRITICAL_ISR(&_mux);
+  isPumpEnabled = _isPumpEnabled;
+  portEXIT_CRITICAL_ISR(&_mux);
+
+  return isPumpEnabled && Statemachine.CanEnablePumps();
 }
 
 //===============================================================
@@ -152,6 +166,9 @@ uint32_t PumpDriver::GetCycleTimespan()
 //===============================================================
 void PumpDriver::Update()
 {
+  // Get current enabled state
+  bool isPumpEnabled = IsEnabled();
+
   // Save absolute time for pwm calculations
   uint32_t absoluteTime_ms = millis();
 
@@ -169,9 +186,9 @@ void PumpDriver::Update()
   uint32_t relativeTime_ms = absoluteTime_ms - _lastPumpCycleStart_ms;
 
   // Check if pumps must be powered on or off
-  _enablePump1 = _isPumpEnabled && relativeTime_ms < _pwmPump1_ms;
-  _enablePump2 = _isPumpEnabled && relativeTime_ms < _pwmPump2_ms;
-  _enablePump3 = _isPumpEnabled && relativeTime_ms < _pwmPump3_ms;
+  _enablePump1 = isPumpEnabled && relativeTime_ms < _pwmPump1_ms;
+  _enablePump2 = isPumpEnabled && relativeTime_ms < _pwmPump2_ms;
+  _enablePump3 = isPumpEnabled && relativeTime_ms < _pwmPump3_ms;
 
   // Write digital pins
   digitalWrite(_pinPump1, _enablePump1 ? HIGH : LOW);
@@ -179,22 +196,13 @@ void PumpDriver::Update()
   digitalWrite(_pinPump3, _enablePump3 ? HIGH : LOW);
 
   // Avoid screensaver while dispensing
-  if (_isPumpEnabled)
+  if (isPumpEnabled)
   {
     Systemhelper.SetLastUserAction();
   }
 
-  // Check for pumps disable event
-  if (_lastIsPumpEnabled &&
-    !_isPumpEnabled)
-  {
-    // Save flow meter values to flash
-    FlowMeter.Save();
-  }
-
   // Save enabled state for next update
   _lastUpdate_ms = absoluteTime_ms;
-  _lastIsPumpEnabled = _isPumpEnabled;
 }
 
 //===============================================================
@@ -203,51 +211,8 @@ void PumpDriver::Update()
 //===============================================================
 void PumpDriver::Enable(bool enable)
 {
-  if (enable && Statemachine.CanEnablePumps())
-  {
-    // Enable pump power
-    Pumps.InternalEnable();
-  }
-  else
-  {
-    // Disable pump power
-    Pumps.InternalDisable();
-  }
-}
-
-//===============================================================
-// Enables pump output
-// IRAM_ATTR function: No communication !!
-//===============================================================
-void PumpDriver::InternalEnable()
-{
-  // Set pins to output direction (enable)
-  pinMode(_pinPump1, OUTPUT);
-  pinMode(_pinPump2, OUTPUT);
-  pinMode(_pinPump3, OUTPUT);
- 
-  // Set enabled flag to true
-  // -> Update function is unlocked
-  _isPumpEnabled = true;
-}
-
-//===============================================================
-// Disables pump output
-// IRAM_ATTR function: No communication !!
-//===============================================================
-void PumpDriver::InternalDisable()
-{ 
-  // Set enabled flag to false 
-  // -> Update function is locked
-  _isPumpEnabled = false;
-
-  // Set pins to input direction (disable)
-  pinMode(_pinPump1, INPUT);
-  pinMode(_pinPump2, INPUT);
-  pinMode(_pinPump3, INPUT);
-  
-  // Disable pumps, just to be sure
-  digitalWrite(_pinPump1, LOW);
-  digitalWrite(_pinPump2, LOW);
-  digitalWrite(_pinPump3, LOW);
+  // Set enabled flag
+  portENTER_CRITICAL_ISR(&_mux);
+  _isPumpEnabled = enable;
+  portEXIT_CRITICAL_ISR(&_mux);
 }

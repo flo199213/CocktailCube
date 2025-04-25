@@ -69,20 +69,26 @@ void FlowMeterDriver::Load()
 //===============================================================
 void FlowMeterDriver::Save()
 {
-  if (_preferences.begin(SETTINGS_NAME, READWRITE_MODE))
+  if (_savePending)
   {
-    _preferences.putDouble(KEY_FLOW_LIQUID1, _valueLiquid1_L);
-    _preferences.putDouble(KEY_FLOW_LIQUID2, _valueLiquid2_L);
-    _preferences.putDouble(KEY_FLOW_LIQUID3, _valueLiquid3_L); 
-    
-    ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
-  }
-  else
-  {
-    ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
-  }
+    // Reset save pending flag
+    _savePending = false;
 
-  _preferences.end();
+    if (_preferences.begin(SETTINGS_NAME, READWRITE_MODE))
+    {
+      _preferences.putDouble(KEY_FLOW_LIQUID1, _valueLiquid1_L);
+      _preferences.putDouble(KEY_FLOW_LIQUID2, _valueLiquid2_L);
+      _preferences.putDouble(KEY_FLOW_LIQUID3, _valueLiquid3_L); 
+      
+      ESP_LOGI(TAG, "Preferences successfully saved to '%s'", SETTINGS_NAME);
+    }
+    else
+    {
+      ESP_LOGE(TAG, "Could not open preferences '%s'", SETTINGS_NAME);
+    }
+
+    _preferences.end();
+  }
 }
 
 //===============================================================
@@ -117,4 +123,7 @@ void FlowMeterDriver::AddFlowTime(uint32_t valueLiquid1_ms, uint32_t valueLiquid
   _valueLiquid1_L += (double)valueLiquid1_ms * FLOWRATE1;
   _valueLiquid2_L += (double)valueLiquid2_ms * FLOWRATE2;
   _valueLiquid3_L += (double)valueLiquid3_ms * FLOWRATE3;
+
+  // Set save pending flag
+  _savePending = valueLiquid1_ms > 0 || valueLiquid2_ms > 0 || valueLiquid3_ms > 0;
 }

@@ -56,17 +56,21 @@ void EncoderButtonDriver::Begin(uint8_t pinEncoderOutA, uint8_t pinEncoderOutB, 
 bool EncoderButtonDriver::IsButtonPress()
 {
   // Save current state
+  portENTER_CRITICAL_ISR(&_mux);
   bool isButtonPress = _isButtonPress;
+  portEXIT_CRITICAL_ISR(&_mux);
   
-  if (_isButtonPress)
+  if (isButtonPress)
   {
     // Debounce
     delay(100);
   }
 
   // Reset button press flag
+  portENTER_CRITICAL_ISR(&_mux);
   _isButtonPress = false;
-  
+  portEXIT_CRITICAL_ISR(&_mux);
+
   // Return result
   return isButtonPress;
 }
@@ -76,6 +80,9 @@ bool EncoderButtonDriver::IsButtonPress()
 //===============================================================
 bool EncoderButtonDriver::IsLongButtonPress()
 {
+  // Enter mux to avoid race condition
+  portENTER_CRITICAL_ISR(&_mux);
+  
   // Save current state
   uint32_t lastButtonPress_ms = _lastButtonPress_ms;
  
@@ -91,7 +98,10 @@ bool EncoderButtonDriver::IsLongButtonPress()
     // the button. Next button press release is therefore no short button press)
     _suppressShortButtonPress = true;
   }
-  
+
+  // Exit mux to avoid race condition
+  portEXIT_CRITICAL_ISR(&_mux);
+
   // Return result
   return isLongButtonPress;
 }
@@ -102,11 +112,11 @@ bool EncoderButtonDriver::IsLongButtonPress()
 //===============================================================
 int16_t EncoderButtonDriver::GetEncoderIncrements()
 {
-  // Save current increments value
+  // Save current increments value and reset the counter
+  portENTER_CRITICAL_ISR(&_mux);
   int16_t currentEncoderIncrements = _encoderIncrements;
-  
-  // Reset the counter
   _encoderIncrements = 0;
+  portEXIT_CRITICAL_ISR(&_mux);
 
   // Return increments
   return currentEncoderIncrements;
@@ -118,6 +128,9 @@ int16_t EncoderButtonDriver::GetEncoderIncrements()
 //===============================================================
 void EncoderButtonDriver::ButtonEvent()
 {
+  // Enter mux to avoid race condition
+  portENTER_CRITICAL_ISR(&_mux);
+
   // Check for falling edge (Pressed)
   if (!digitalRead(_pinEncoderButton))
   {
@@ -132,6 +145,9 @@ void EncoderButtonDriver::ButtonEvent()
     _isButtonPress = !_suppressShortButtonPress;
     _suppressShortButtonPress = false;
   }
+  
+  // Exit mux to avoid race condition
+  portEXIT_CRITICAL_ISR(&_mux);
 }
 
 //===============================================================
@@ -140,6 +156,9 @@ void EncoderButtonDriver::ButtonEvent()
 //===============================================================
 void EncoderButtonDriver::DoEncoderA()
 {
+  // Enter mux to avoid race condition
+  portENTER_CRITICAL_ISR(&_mux);
+
   if (digitalRead(_pinEncoderOutA) != _A_set)
   {
     _A_set = !_A_set;
@@ -150,6 +169,9 @@ void EncoderButtonDriver::DoEncoderA()
       _encoderIncrements = _encoderIncrements + Config.encoderDirection;
     }
   }
+
+  // Exit mux to avoid race condition
+  portEXIT_CRITICAL_ISR(&_mux);
 }
 
 //===============================================================
@@ -158,6 +180,9 @@ void EncoderButtonDriver::DoEncoderA()
 //===============================================================
 void EncoderButtonDriver::DoEncoderB()
 {
+  // Enter mux to avoid race condition
+  portENTER_CRITICAL_ISR(&_mux);
+
   if (digitalRead(_pinEncoderOutB) != _B_set)
   {
     _B_set = !_B_set;
@@ -168,4 +193,7 @@ void EncoderButtonDriver::DoEncoderB()
       _encoderIncrements = _encoderIncrements - Config.encoderDirection;
     }
   }
+
+  // Exit mux to avoid race condition
+  portEXIT_CRITICAL_ISR(&_mux);
 }

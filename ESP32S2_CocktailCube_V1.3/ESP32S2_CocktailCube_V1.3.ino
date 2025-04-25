@@ -359,6 +359,9 @@ void loop()
     // Print memory information
     ESP_LOGI(TAG, "%s", Systemhelper.GetMemoryInfoString().c_str());
 
+    // Save flow meter values to flash
+    FlowMeter.Save();
+
     // Toggle status LED
     digitalWrite(PIN_LEDSTATUS, !digitalRead(PIN_LEDSTATUS));
   }

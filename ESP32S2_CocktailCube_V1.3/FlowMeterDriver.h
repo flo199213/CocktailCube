@@ -57,6 +57,11 @@ class FlowMeterDriver
   private:
     // Flow meter variables
     Preferences _preferences;
+
+    // Save variable
+    bool _savePending = false;
+
+    // Liquid counter variables
     double _valueLiquid1_L;
     double _valueLiquid2_L;
     double _valueLiquid3_L;

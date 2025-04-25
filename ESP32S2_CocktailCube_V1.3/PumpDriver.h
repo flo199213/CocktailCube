@@ -64,6 +64,9 @@ class PumpDriver
     void IRAM_ATTR Enable(bool enable);
 
   private:
+    // Port mux
+    portMUX_TYPE _mux = portMUX_INITIALIZER_UNLOCKED;
+
     // Preferences variable
     Preferences _preferences;
 
@@ -75,8 +78,10 @@ class PumpDriver
     // VCC voltage
     double _vccVoltage;
 
-    // Enabled values
-    bool _isPumpEnabled = false;
+    // Enabled value
+    volatile bool _isPumpEnabled = false; // volatile for ISR use
+
+    // Values for Update method
     bool _enablePump1 = false;
     bool _enablePump2 = false;
     bool _enablePump3 = false;
@@ -88,15 +93,8 @@ class PumpDriver
     uint32_t _pwmPump3_ms = 0;
 
     // Last variables for edge detection
-    bool _lastIsPumpEnabled = false;
     uint32_t _lastUpdate_ms = 0;
     uint32_t _lastPumpCycleStart_ms = 0;
-
-    // Enables pump output
-    void IRAM_ATTR InternalEnable();
-    
-    // Disables pump output
-    void IRAM_ATTR InternalDisable();
 };
 
 //===============================================================

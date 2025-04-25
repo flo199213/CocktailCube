@@ -22,7 +22,7 @@
 //===============================================================
 // Defines
 //===============================================================
-#define APP_VERSION                       "V1.3.1.1"
+#define APP_VERSION                       "V1.3.1.2"
 #define APP_COPYRIGHT                     "2025"
 
 #define WIFI_SSID                         "CockailCube" // Should not exceed 15 characters and be a single word -> will be the dns name in lower case and without white spaces for example "http://cocktailcube.local/"
