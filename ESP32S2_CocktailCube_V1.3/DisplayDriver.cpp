@@ -1378,7 +1378,7 @@ void DisplayDriver::DrawCenteredString(const String& text, int16_t x, int16_t y,
   // Draw background if active
   if (backGround)
   {
-    _tft->fillRect(x_text - 2, y - h / 2 - 2, w + 4, h + 4, backGroundColor);
+    _tft->fillRect(x_text - 2, y - h / 2, w + 4, h + 4, backGroundColor);
   }
 
   // Print text
